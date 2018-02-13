@@ -52,7 +52,7 @@ malf <- function(input_image,
     kernel_width <- 2 * floor(kernel_width / 2) + 1
     kernel <- gaussian_kernel(sigma = kernel_sigma, size = kernel_width)
 
-    elapsed <- system.time(new_voting <- regularize(new_voting, kernel))
+    elapsed <- system.time(new_voting <- regularize(new_voting, kernel, ncores = 3))
     cat("Elapsed in smoothing: ", elapsed[3], "\n")
 
 

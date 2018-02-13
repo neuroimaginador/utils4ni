@@ -83,13 +83,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // defuzzify
-IntegerVector defuzzify(NumericVector image);
-RcppExport SEXP _utils4ni_defuzzify(SEXP imageSEXP) {
+IntegerVector defuzzify(NumericVector image, int ncores);
+RcppExport SEXP _utils4ni_defuzzify(SEXP imageSEXP, SEXP ncoresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type image(imageSEXP);
-    rcpp_result_gen = Rcpp::wrap(defuzzify(image));
+    Rcpp::traits::input_parameter< int >::type ncores(ncoresSEXP);
+    rcpp_result_gen = Rcpp::wrap(defuzzify(image, ncores));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -345,14 +346,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // regularize
-NumericVector regularize(NumericVector image, NumericVector kernel);
-RcppExport SEXP _utils4ni_regularize(SEXP imageSEXP, SEXP kernelSEXP) {
+NumericVector regularize(NumericVector image, NumericVector kernel, int ncores);
+RcppExport SEXP _utils4ni_regularize(SEXP imageSEXP, SEXP kernelSEXP, SEXP ncoresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type image(imageSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type kernel(kernelSEXP);
-    rcpp_result_gen = Rcpp::wrap(regularize(image, kernel));
+    Rcpp::traits::input_parameter< int >::type ncores(ncoresSEXP);
+    rcpp_result_gen = Rcpp::wrap(regularize(image, kernel, ncores));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -448,7 +450,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_utils4ni_connected_components", (DL_FUNC) &_utils4ni_connected_components, 1},
     {"_utils4ni_cTruncado", (DL_FUNC) &_utils4ni_cTruncado, 2},
     {"_utils4ni_cvolfilter2d", (DL_FUNC) &_utils4ni_cvolfilter2d, 3},
-    {"_utils4ni_defuzzify", (DL_FUNC) &_utils4ni_defuzzify, 1},
+    {"_utils4ni_defuzzify", (DL_FUNC) &_utils4ni_defuzzify, 2},
     {"_utils4ni_extend_labels", (DL_FUNC) &_utils4ni_extend_labels, 2},
     {"_utils4ni_map_ids_workhorse", (DL_FUNC) &_utils4ni_map_ids_workhorse, 3},
     {"_utils4ni_map_extra_classes", (DL_FUNC) &_utils4ni_map_extra_classes, 3},
@@ -464,7 +466,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_utils4ni_label_fusion_omp", (DL_FUNC) &_utils4ni_label_fusion_omp, 12},
     {"_utils4ni_label_fusion2_omp", (DL_FUNC) &_utils4ni_label_fusion2_omp, 12},
     {"_utils4ni_label_fusion3_omp", (DL_FUNC) &_utils4ni_label_fusion3_omp, 12},
-    {"_utils4ni_regularize", (DL_FUNC) &_utils4ni_regularize, 2},
+    {"_utils4ni_regularize", (DL_FUNC) &_utils4ni_regularize, 3},
     {"_utils4ni_sum_by_ROI", (DL_FUNC) &_utils4ni_sum_by_ROI, 2},
     {"_utils4ni_max_by_ROI", (DL_FUNC) &_utils4ni_max_by_ROI, 2},
     {"_utils4ni_min_by_ROI", (DL_FUNC) &_utils4ni_min_by_ROI, 2},

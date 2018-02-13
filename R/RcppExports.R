@@ -25,8 +25,8 @@ cvolfilter2d <- function(ima, dims, v) {
     .Call('_utils4ni_cvolfilter2d', PACKAGE = 'utils4ni', ima, dims, v)
 }
 
-defuzzify <- function(image) {
-    .Call('_utils4ni_defuzzify', PACKAGE = 'utils4ni', image)
+defuzzify <- function(image, ncores = 1L) {
+    .Call('_utils4ni_defuzzify', PACKAGE = 'utils4ni', image, ncores)
 }
 
 extend_labels <- function(pIn, maskImage) {
@@ -89,8 +89,8 @@ label_fusion3_omp <- function(labels4D, actual_voxels, voxel_lookup_table, label
     invisible(.Call('_utils4ni_label_fusion3_omp', PACKAGE = 'utils4ni', labels4D, actual_voxels, voxel_lookup_table, label_ids, kANN, patch_neighbours, k, lambda, sigma2, match, new_voting, ncores))
 }
 
-regularize <- function(image, kernel) {
-    .Call('_utils4ni_regularize', PACKAGE = 'utils4ni', image, kernel)
+regularize <- function(image, kernel, ncores = 1L) {
+    .Call('_utils4ni_regularize', PACKAGE = 'utils4ni', image, kernel, ncores)
 }
 
 sum_by_ROI <- function(labelled, values) {

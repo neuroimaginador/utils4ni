@@ -13,9 +13,11 @@ using namespace Rcpp;
 //
 
 
-void defuzzify(double* fuzzy_voting, int n_voxels_full, int n_labels, int* label_ids, int* segmentation) {
+void defuzzify(double* fuzzy_voting, int n_voxels_full, int n_labels, int* label_ids, int* segmentation, int ncores = 1) {
 
   // Compute final segmentation
+  // Added an omp pragma directive to parallelize the loop with ncores
+#pragma omp parallel for num_threads(ncores)
   for (int voxel = 0; voxel < n_voxels_full; voxel++) {
 
     double max_voting = 0;
@@ -40,9 +42,11 @@ void defuzzify(double* fuzzy_voting, int n_voxels_full, int n_labels, int* label
 
 }
 
-void defuzzify(double* fuzzy_voting, int n_voxels_full, int n_labels, int* segmentation) {
+void defuzzify(double* fuzzy_voting, int n_voxels_full, int n_labels, int* segmentation, int ncores = 1) {
 
   // Compute final segmentation
+  // Added an omp pragma directive to parallelize the loop with ncores
+#pragma omp parallel for num_threads(ncores)
   for (int voxel = 0; voxel < n_voxels_full; voxel++) {
 
     double max_voting = 0;
@@ -66,30 +70,22 @@ void defuzzify(double* fuzzy_voting, int n_voxels_full, int n_labels, int* segme
 }
 
 //[[Rcpp::export]]
-IntegerVector defuzzify(NumericVector image) {
+IntegerVector defuzzify(NumericVector image, int ncores = 1) {
 
   IntegerVector dims = image.attr("dim");
   IntegerVector segmentation_dims(dims.size() - 1);
-
-  // Rprintf("Image size = %u\n", image.size());
-  // Rprintf("Image number of dims = %u\n", dims.size());
 
   int nvoxels = 1;
 
   for (int i = 0; i < dims.size() - 1; i++) {
 
     segmentation_dims[i] = dims[i];
-    // Rprintf("Image dims[%u] = %u\n", i, dims[i]);
     nvoxels *= dims[i];
 
   }
 
-  // Rprintf("Image dims[%u] = %u\n", dims.size() - 1, dims[dims.size() - 1]);
-
   IntegerVector segmentation(nvoxels);
   int nclasses = (dims.begin())[dims.size() - 1];
-
-  // Rprintf("Number of classes = %u\n", nclasses);
 
   defuzzify(image.begin(), nvoxels, nclasses, segmentation.begin());
 

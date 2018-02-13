@@ -11,6 +11,48 @@ using namespace Rcpp;
 //   http://gallery.rcpp.org/
 //
 
+void get_neighbours(int idx, int* neighbours, int* neighs, int n_neighbours) {
+
+  for (int i = 0; i < n_neighbours; i++) {
+
+    neighs[i] = idx + neighbours[i];
+
+  }
+
+}
+
+template <typename T>
+void get_values(const T* image, int* idx, T* values, int n) {
+
+  for (int i = 0; i < n; i++) {
+
+    values[i] = image[idx[i]];
+
+  }
+
+}
+
+void get_image_value(const double* image, int* idx, double* values, int n) {
+
+  for (int i = 0; i < n; i++) {
+
+    values[i] = image[idx[i]];
+
+  }
+
+}
+
+void get_label_value(const int* image, int* idx, int* values, int n) {
+
+  for (int i = 0; i < n; i++) {
+
+    values[i] = image[idx[i]];
+
+  }
+
+}
+
+
 
 void get_neighbours_relative_coordinates(IntegerVector array,
                                          int width,

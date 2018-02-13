@@ -53,6 +53,42 @@ fast_read_nifti <- function(filename) {
     .Call('_utils4ni_fast_read_nifti', PACKAGE = 'utils4ni', filename)
 }
 
+count_elegible <- function(image, patch_size, search_size, stride, voxel_lookup_table) {
+    .Call('_utils4ni_count_elegible', PACKAGE = 'utils4ni', image, patch_size, search_size, stride, voxel_lookup_table)
+}
+
+constrained_initialization_omp <- function(input_image, template4D, patch_size, search_size, actual_voxels, voxel_lookup_table, kANN, k, ncores = 1L) {
+    invisible(.Call('_utils4ni_constrained_initialization_omp', PACKAGE = 'utils4ni', input_image, template4D, patch_size, search_size, actual_voxels, voxel_lookup_table, kANN, k, ncores))
+}
+
+all_patches_similarity_omp <- function(input_image, template4D, k, actual_voxels, voxel_lookup_table, patch_neighbours, kANN, similarities, ncores = 1L) {
+    invisible(.Call('_utils4ni_all_patches_similarity_omp', PACKAGE = 'utils4ni', input_image, template4D, k, actual_voxels, voxel_lookup_table, patch_neighbours, kANN, similarities, ncores))
+}
+
+all_patches_similarity_omp2 <- function(input_image, template4D, k, actual_voxels, voxel_lookup_table, voxel_array_index, patch_neighbours, kANN, similarities, ncores = 1L) {
+    invisible(.Call('_utils4ni_all_patches_similarity_omp2', PACKAGE = 'utils4ni', input_image, template4D, k, actual_voxels, voxel_lookup_table, voxel_array_index, patch_neighbours, kANN, similarities, ncores))
+}
+
+propagation_step_omp <- function(input_image, template4D, actual_voxels, voxel_lookup_table, patch_neighbours, kANN, k, direction, patch_size, stride, similarities, ncores = 1L) {
+    invisible(.Call('_utils4ni_propagation_step_omp', PACKAGE = 'utils4ni', input_image, template4D, actual_voxels, voxel_lookup_table, patch_neighbours, kANN, k, direction, patch_size, stride, similarities, ncores))
+}
+
+constrained_random_search_omp <- function(input_image, template4D, actual_voxels, voxel_lookup_table, kANN, k, patch_size, patch_neighbours, search_size_max, similarities, max_random_neighbours, ncores = 1L) {
+    invisible(.Call('_utils4ni_constrained_random_search_omp', PACKAGE = 'utils4ni', input_image, template4D, actual_voxels, voxel_lookup_table, kANN, k, patch_size, patch_neighbours, search_size_max, similarities, max_random_neighbours, ncores))
+}
+
+label_fusion_omp <- function(labels4D, actual_voxels, voxel_lookup_table, label_ids, kANN, patch_neighbours, k, lambda, sigma2, match, new_voting, ncores = 2L) {
+    invisible(.Call('_utils4ni_label_fusion_omp', PACKAGE = 'utils4ni', labels4D, actual_voxels, voxel_lookup_table, label_ids, kANN, patch_neighbours, k, lambda, sigma2, match, new_voting, ncores))
+}
+
+label_fusion2_omp <- function(labels4D, actual_voxels, voxel_lookup_table, label_ids, kANN, patch_neighbours, k, lambda, sigma2, match, new_voting, ncores = 2L) {
+    invisible(.Call('_utils4ni_label_fusion2_omp', PACKAGE = 'utils4ni', labels4D, actual_voxels, voxel_lookup_table, label_ids, kANN, patch_neighbours, k, lambda, sigma2, match, new_voting, ncores))
+}
+
+label_fusion3_omp <- function(labels4D, actual_voxels, voxel_lookup_table, label_ids, kANN, patch_neighbours, k, lambda, sigma2, match, new_voting, ncores = 2L) {
+    invisible(.Call('_utils4ni_label_fusion3_omp', PACKAGE = 'utils4ni', labels4D, actual_voxels, voxel_lookup_table, label_ids, kANN, patch_neighbours, k, lambda, sigma2, match, new_voting, ncores))
+}
+
 regularize <- function(image, kernel) {
     .Call('_utils4ni_regularize', PACKAGE = 'utils4ni', image, kernel)
 }
@@ -79,5 +115,9 @@ mean_by_ROI <- function(labelled, values) {
 
 segmentation <- function(image, otsu_estimates) {
     .Call('_utils4ni_segmentation', PACKAGE = 'utils4ni', image, otsu_estimates)
+}
+
+generate_random <- function(min, max, n) {
+    .Call('_utils4ni_generate_random', PACKAGE = 'utils4ni', min, max, n)
 }
 

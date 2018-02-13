@@ -9,7 +9,7 @@ remove_small_cc <- function(labelling, pctg = 0.25) {
 
   cc <- map_ids_cpp(cc, remap_classes = remap_classes, invert = FALSE)
 
-  confusion_matrix <- table(mask, cc)
+  confusion_matrix <- table(labelling, cc)
   confusion_matrix <- confusion_matrix[-1, -1]
 
   if (is.vector(confusion_matrix)) {

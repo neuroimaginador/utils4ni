@@ -1,0 +1,13 @@
+Package: utils4ni
+Title: Utils for Neuroimaging
+Version: 0.0.0.9000
+Authors@R: person("Domingo", "López-Rodríguez", role = c("aut", "cre"), email = "neuroimaginador@gmail.com")
+Maintainer: Domingo Lopez-Rodriguez <neuroimaginador@gmail.com>
+Description: Some utilities to deal with Neuroimage.
+Depends: R (>= 3.3.3)
+License: GPL (>= 2)
+Imports: Rcpp (>= 0.12.12), neurobase
+Suggests: testthat, ni.datasets
+LinkingTo: Rcpp, RNifti
+RoxygenNote: 6.0.1
+Encoding: UTF-8

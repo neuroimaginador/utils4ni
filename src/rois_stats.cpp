@@ -13,6 +13,36 @@ using namespace Rcpp;
 // For more on using Rcpp click the Help button on the editor toolbar
 
 // [[Rcpp::export]]
+NumericVector sum_4d(NumericVector values) {
+
+  IntegerVector dims = values.attr("dim");
+  IntegerVector new_dims(3);
+  for (int d = 0; d < 3; d++) {
+
+    new_dims[d] = dims[d];
+
+  }
+  int n_4d = dims[3];
+
+  NumericVector suma(values.size() / n_4d);
+
+  for (int voxel = 0; voxel < suma.size(); voxel++) {
+
+    for (int d = 0; d < n_4d; d++) {
+
+      suma[voxel] += values[d * suma.size() + voxel];
+
+    }
+
+  }
+
+  suma.attr("dim") = new_dims;
+
+  return suma;
+
+}
+
+// [[Rcpp::export]]
 NumericVector sum_by_ROI(IntegerVector labelled, NumericVector values) {
 
   int N = max(labelled);

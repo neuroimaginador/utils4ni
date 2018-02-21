@@ -18,3 +18,7 @@ utils.o
 utils4ni.so
 regularize.o
 rois_stats.o
+confusion_matrix.o
+nifti_utils.o
+opal_omp_memory.o
+transform_volume.o

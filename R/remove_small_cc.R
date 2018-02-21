@@ -9,19 +9,20 @@ remove_small_cc <- function(labelling, pctg = 0.25) {
 
   cc <- map_ids_cpp(cc, remap_classes = remap_classes, invert = FALSE)
 
-  confusion_matrix <- table(labelling, cc)
-  confusion_matrix <- confusion_matrix[-1, -1]
+  # confusion_matrix <- table(labelling, cc)
+  cm <- confusion_matrix(labelling, cc)
+  cm <- cm[-1, -1]
 
-  if (is.vector(confusion_matrix)) {
+  if (is.vector(cm)) {
 
-    idx_below <- which_below(confusion_matrix, pctg)
+    idx_below <- which_below(cm, pctg)
 
   } else {
 
-    idx_below <- unlist(lapply(1:nrow(confusion_matrix),
+    idx_below <- unlist(lapply(1:nrow(cm),
                                function(row) {
 
-                                 v <- confusion_matrix[row, ]
+                                 v <- cm[row, ]
                                  which_below(v, pctg)
 
                                }))

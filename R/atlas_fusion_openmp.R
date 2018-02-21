@@ -1,9 +1,9 @@
 malf <- function(input_image,
+                 mask = NULL,
                  template4D,
                  labels4D,
                  patch_size = 9,
                  search_size = 5,
-                 k = 10,
                  stride = round((patch_size + 1) / 2),
                  max_iter = 10,
                  max_random_neighbours = 2,
@@ -11,18 +11,22 @@ malf <- function(input_image,
                  lambda = 0.7,
                  kernel_sigma = 1,
                  kernel_width = 3,
-                 sigma2 = 0) {
+                 sigma2 = 0,
+                 return_memberships = FALSE,
+                 ncores = parallel::detectCores() - 1) {
 
+  cat("Running MALF in", ncores, "cores\n")
 
   elapsed <- system.time(
     L <- obtain_candidates_similarities(image = input_image,
+                                        mask = mask,
                                         templates = template4D,
                                         patch_size = patch_size,
                                         search_size = search_size,
                                         stride = stride,
-                                        k = k,
                                         max_iter = max_iter,
-                                        max_random_neighbours = max_random_neighbours)
+                                        max_random_neighbours = max_random_neighbours,
+                                        ncores = ncores)
   )
 
   cat("Elapsed in obtaining candidates: ", elapsed[3], "\n")
@@ -37,12 +41,11 @@ malf <- function(input_image,
                       label_ids = label_ids,
                       kANN = L$candidates %>% as.integer(),
                       patch_neighbours = L$patch_neighbours %>% as.integer(),
-                      k = k,
                       lambda = lambda,
                       sigma2 = sigma2,
                       match = L$similarities,
                       new_voting = new_voting,
-                      ncores = 3)
+                      ncores = ncores)
   )
   cat("Elapsed in label fusion: ", elapsed[3], "\n")
 
@@ -52,37 +55,64 @@ malf <- function(input_image,
     kernel_width <- 2 * floor(kernel_width / 2) + 1
     kernel <- gaussian_kernel(sigma = kernel_sigma, size = kernel_width)
 
-    elapsed <- system.time(new_voting <- regularize(new_voting, kernel, ncores = 3))
+    elapsed <- system.time(new_voting <- regularize(new_voting, kernel, ncores = ncores))
     cat("Elapsed in smoothing: ", elapsed[3], "\n")
 
 
   }
 
-  seg <- defuzzify(new_voting) - 1
+  if (return_memberships) {
 
-  return(seg)
+    return(new_voting)
+
+  } else {
+
+    seg <- defuzzify(new_voting) - 1
+
+    return(seg)
+
+  }
 
 }
 
 
 obtain_candidates_similarities <- function(image,
+                                           mask = NULL,
                                            templates,
                                            patch_size = 9,
                                            search_size = 5,
                                            stride = round((patch_size + 1) / 2),
-                                           k = 10,
                                            max_iter = 10,
-                                           max_random_neighbours = 2) {
+                                           max_random_neighbours = 2,
+                                           crs = TRUE,
+                                           early_stopping = list(),
+                                           scheme = 0,
+                                           ncores = 2) {
 
+  # image <- map_images(source = image, target = templates[, , , 1])
 
   voxel_lookup_table <- vector(mode = "integer", length = prod(dim(image)))
 
-  actual_voxels <- count_elegible(image,
-                                  patch_size = patch_size,
-                                  search_size = search_size,
-                                  stride = stride,
-                                  voxel_lookup_table)
+  if (is.null(mask)) {
 
+    actual_voxels <- count_elegible(image,
+                                    patch_size = patch_size,
+                                    search_size = search_size,
+                                    stride = stride,
+                                    voxel_lookup_table)
+
+  } else {
+
+    actual_voxels <- count_elegible_masked(image,
+                                           mask,
+                                           patch_size = patch_size,
+                                           search_size = search_size,
+                                           stride = stride,
+                                           voxel_lookup_table)
+
+  }
+
+  k <- dim(templates)[4]
   kANN <- vector(mode = "integer", length = k * actual_voxels)
   similarities <- vector(mode = "numeric", length = k * actual_voxels)
 
@@ -93,59 +123,116 @@ obtain_candidates_similarities <- function(image,
                                  actual_voxels = actual_voxels,
                                  voxel_lookup_table = voxel_lookup_table,
                                  kANN = kANN,
-                                 k = k,
-                                 ncores = 3)
-
-
+                                 ncores = ncores)
 
   patch_neighbours <- get_neighbours(array = image, width = patch_size)
 
-  all_patches_similarity_omp(input_image = image,
-                             template4D = templates,
-                             k = k,
-                             actual_voxels = actual_voxels,
-                             voxel_lookup_table = voxel_lookup_table,
-                             patch_neighbours = patch_neighbours,
-                             kANN = kANN,
-                             similarities = similarities,
-                             ncores = 3)
+  for (sc in scheme) {
 
-  cat("Mean similarity = ", mean(similarities), "\n")
+    cat("Initial scheme : ", sc, "\n")
 
-  direction <- -1
-  for (i in seq(max_iter)) {
+    if (sc > 0) {
 
-    propagation_step_omp(input_image = image,
-                         template4D = templates,
-                         actual_voxels = actual_voxels,
-                         voxel_lookup_table = voxel_lookup_table,
-                         patch_neighbours = patch_neighbours,
-                         kANN = kANN,
-                         k = k,
-                         direction = direction,
-                         patch_size = patch_size,
-                         stride = stride,
-                         similarities = similarities,
-                         ncores = 3)
+      kernel <- gaussian_kernel(sigma = sc, size = 5)
+      this_image <- regularize(image, kernel, ncores = ncores)
+      these_templates <- regularize(templates, kernel)
 
-    cat("Mean similarity after PS = ", mean(similarities), "\n")
+    } else {
 
-    direction <- -1 * direction
+      this_image <- image
+      these_templates <- templates
 
-    constrained_random_search_omp(input_image = image,
-                                  template4D = templates,
-                                  actual_voxels = actual_voxels,
-                                  voxel_lookup_table = voxel_lookup_table,
-                                  kANN = kANN,
-                                  k = k,
-                                  patch_size = patch_size,
-                                  patch_neighbours = patch_neighbours,
-                                  search_size_max = search_size,
-                                  similarities = similarities,
-                                  max_random_neighbours = max_random_neighbours,
-                                  ncores = 3)
+    }
 
-    cat("Mean similarity after CRS = ", mean(similarities), "\n")
+    all_patches_similarity_omp(input_image = this_image,
+                               template4D = these_templates,
+                               actual_voxels = actual_voxels,
+                               voxel_lookup_table = voxel_lookup_table,
+                               patch_neighbours = patch_neighbours,
+                               kANN = kANN,
+                               similarities = similarities,
+                               ncores = ncores)
+
+    previous_similarity <- mean(similarities)
+    cat("Mean similarity = ", previous_similarity, "\n")
+
+    direction <- -1
+
+    for (i in seq(max_iter)) {
+
+      propagation_step_omp(input_image = this_image,
+                           template4D = these_templates,
+                           actual_voxels = actual_voxels,
+                           voxel_lookup_table = voxel_lookup_table,
+                           patch_neighbours = patch_neighbours,
+                           kANN = kANN,
+                           direction = direction,
+                           patch_size = patch_size,
+                           stride = stride,
+                           similarities = similarities,
+                           ncores = ncores)
+
+      cat("Mean similarity after PS- = ", mean(similarities), "\n")
+
+      direction <- -1 * direction
+
+      # if (!crs) {
+      propagation_step_omp(input_image = this_image,
+                           template4D = these_templates,
+                           actual_voxels = actual_voxels,
+                           voxel_lookup_table = voxel_lookup_table,
+                           patch_neighbours = patch_neighbours,
+                           kANN = kANN,
+                           direction = direction,
+                           patch_size = patch_size,
+                           stride = stride,
+                           similarities = similarities,
+                           ncores = ncores)
+
+
+      cat("Mean similarity after PS+ = ", mean(similarities), "\n")
+      direction <- -1 * direction
+
+      # }
+
+      if (crs) {
+
+        constrained_random_search_omp(input_image = this_image,
+                                      template4D = these_templates,
+                                      actual_voxels = actual_voxels,
+                                      voxel_lookup_table = voxel_lookup_table,
+                                      kANN = kANN,
+                                      patch_size = patch_size,
+                                      patch_neighbours = patch_neighbours,
+                                      search_size_max = search_size,
+                                      similarities = similarities,
+                                      max_random_neighbours = max_random_neighbours,
+                                      ncores = ncores)
+
+        cat("Mean similarity after CRS = ", mean(similarities), "\n")
+
+      }
+
+      current_similarity <- mean(similarities)
+      difference <- abs((previous_similarity - current_similarity) / previous_similarity)
+      # cat("Difference = ", difference, "\n")
+      # str(early_stopping)
+      if ("tol" %in% names(early_stopping)) {
+
+        tol <- as.numeric(early_stopping$tol)
+
+        if (difference < tol) {
+
+          cat("Reached maximum allowed tolerance.\n")
+          break
+
+        }
+
+      }
+      previous_similarity <- current_similarity
+
+    }
+
 
   }
 

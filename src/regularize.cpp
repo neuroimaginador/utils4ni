@@ -39,15 +39,16 @@ void regularize(double* input,
 
     // Added an omp pragma directive to parallelize the loop with ncores
 #pragma omp parallel for num_threads(ncores)
-    for (int x = limit; x < dims[0] - limit; x++) {
+    for (int x = 0; x < dims[0]; x++) {
 
-      for (int y = limit; y < dims[1] - limit; y++) {
+      for (int y = 0; y < dims[1]; y++) {
 
-        for (int z = limit; z < dims[2] - limit; z++) {
+        for (int z = 0; z < dims[2]; z++) {
 
           int voxel = x + dims[0] * y + dims[0] * dims[1] * z;
 
           double cumul = 0.0;
+          double cumul_kernel = 0.0;
 
           for (int xdisp = -search_limit; xdisp < search_limit; xdisp++) {
 
@@ -57,7 +58,17 @@ void regularize(double* input,
 
                 int loc_kernel = (xdisp + search_limit) + kernel_width * (ydisp + search_limit) + kernel_width * kernel_width * (zdisp + search_limit);
                 int loc_image = (x + xdisp) + dims[0] * (y + ydisp) + dims[0] * dims[1] * (z + zdisp);
-                cumul += input[loc_image] * kernel[loc_kernel];
+
+                float value = 0;
+                if ((x + xdisp >= 0) && (x + xdisp < dims[0]) &&
+                    (y + ydisp >= 0) && (y + ydisp < dims[1]) &&
+                    (z + zdisp >= 0) && (z + zdisp < dims[2])) {
+
+                  value = input[loc_image] * kernel[loc_kernel];
+                  cumul_kernel += kernel[loc_kernel];
+                }
+
+                cumul += value;
 
               }
 
@@ -66,6 +77,8 @@ void regularize(double* input,
           }
 
           output[voxel] = cumul;
+          if (cumul_kernel > 0)
+            output[voxel] /= cumul_kernel;
 
         }
 
@@ -81,17 +94,18 @@ void regularize(double* input,
 
     // Added an omp pragma directive to parallelize the loop with ncores
 #pragma omp parallel for num_threads(ncores)
-    for (int x = limit; x < dims[0] - limit; x++) {
+    for (int x = 0; x < dims[0]; x++) {
 
-      for (int y = limit; y < dims[1] - limit; y++) {
+      for (int y = 0; y < dims[1]; y++) {
 
-        for (int z = limit; z < dims[2] - limit; z++) {
+        for (int z = 0; z < dims[2]; z++) {
 
           for (int k = 0; k < dims[3]; k++) {
 
             int voxel = x + dims[0] * y + dims[0] * dims[1] * z +  dims[0] * dims[1] * dims[2] * k;
 
             double cumul = 0.0;
+            double cumul_kernel = 0.0;
 
             for (int xdisp = -search_limit; xdisp < search_limit; xdisp++) {
 
@@ -101,7 +115,17 @@ void regularize(double* input,
 
                   int loc_kernel = (xdisp + search_limit) + kernel_width * (ydisp + search_limit) + kernel_width * kernel_width * (zdisp + search_limit);
                   int loc_image = (x + xdisp) + dims[0] * (y + ydisp) + dims[0] * dims[1] * (z + zdisp) +  dims[0] * dims[1] * dims[2] * k;
-                  cumul += input[loc_image] * kernel[loc_kernel];
+
+                  float value = 0;
+                  if ((x + xdisp >= 0) && (x + xdisp < dims[0]) &&
+                      (y + ydisp >= 0) && (y + ydisp < dims[1]) &&
+                      (z + zdisp >= 0) && (z + zdisp < dims[2])) {
+
+                    value = input[loc_image] * kernel[loc_kernel];
+                    cumul_kernel += kernel[loc_kernel];
+                  }
+
+                  cumul += value;
 
                 }
 
@@ -110,6 +134,8 @@ void regularize(double* input,
             }
 
             output[voxel] = cumul;
+            if (cumul_kernel > 0)
+              output[voxel] /= cumul_kernel;
 
           }
 

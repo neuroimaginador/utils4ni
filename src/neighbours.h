@@ -1,5 +1,5 @@
 #include <Rcpp.h>
-#include <Rdefines.h>
+#include <Rinternals.h>
 using namespace Rcpp;
 
 void get_neighbours(int idx, int* neighbours, int* neighs, int n_neighbours);

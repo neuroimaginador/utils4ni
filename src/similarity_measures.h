@@ -1,5 +1,5 @@
 #include <Rcpp.h>
-#include <Rdefines.h>
+#include <Rinternals.h>
 using namespace Rcpp;
 
 double SSDPatch(double* PatchImg, double* PatchTemplate, int f);

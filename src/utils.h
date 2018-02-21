@@ -1,5 +1,5 @@
 #include <Rcpp.h>
-#include <Rdefines.h>
+#include <Rinternals.h>
 #include <Rcpp/Benchmark/Timer.h>
 using namespace Rcpp;
 

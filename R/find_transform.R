@@ -51,7 +51,7 @@ find_transform <- function(source_image,
                                          target_dims = dim(target_image),
                                          method = method[1],
                                          sigma = sigma,
-                                         kernel = kernel)
+                                         kernel_size = kernel_size)
 
 
   mapped_image <- deform_volume(V = source_image,

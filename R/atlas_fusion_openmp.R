@@ -87,11 +87,18 @@ obtain_candidates_similarities <- function(image,
                                            crs = TRUE,
                                            early_stopping = list(),
                                            scheme = 0,
+                                           method = c("mi", "ssd"),
                                            ncores = 2) {
 
   # image <- map_images(source = image, target = templates[, , , 1])
+  #
+  method <- method[1]
+  my_method <- switch(method,
+                      "mi" = 0,
+                      "ssd" = 1)
 
   voxel_lookup_table <- vector(mode = "integer", length = prod(dim(image)))
+  cat("Init\n")
 
   if (is.null(mask)) {
 
@@ -116,6 +123,13 @@ obtain_candidates_similarities <- function(image,
   kANN <- vector(mode = "integer", length = k * actual_voxels)
   similarities <- vector(mode = "numeric", length = k * actual_voxels)
 
+  cat("k = ", k, "\n")
+  cat("actual_voxels = ", actual_voxels, "\n")
+
+  cat("Constrained init\n")
+
+  patch_neighbours <- get_neighbours(array = image, width = patch_size)
+
   constrained_initialization_omp(input_image = image,
                                  template4D = templates,
                                  patch_size = patch_size,
@@ -125,7 +139,7 @@ obtain_candidates_similarities <- function(image,
                                  kANN = kANN,
                                  ncores = ncores)
 
-  patch_neighbours <- get_neighbours(array = image, width = patch_size)
+  cat("Iterations\n")
 
   for (sc in scheme) {
 
@@ -151,6 +165,7 @@ obtain_candidates_similarities <- function(image,
                                patch_neighbours = patch_neighbours,
                                kANN = kANN,
                                similarities = similarities,
+                               method = my_method,
                                ncores = ncores)
 
     previous_similarity <- mean(similarities)
@@ -170,6 +185,7 @@ obtain_candidates_similarities <- function(image,
                            patch_size = patch_size,
                            stride = stride,
                            similarities = similarities,
+                           method = my_method,
                            ncores = ncores)
 
       cat("Mean similarity after PS- = ", mean(similarities), "\n")
@@ -187,6 +203,7 @@ obtain_candidates_similarities <- function(image,
                            patch_size = patch_size,
                            stride = stride,
                            similarities = similarities,
+                           method = my_method,
                            ncores = ncores)
 
 
@@ -207,6 +224,7 @@ obtain_candidates_similarities <- function(image,
                                       search_size_max = search_size,
                                       similarities = similarities,
                                       max_random_neighbours = max_random_neighbours,
+                                      method = my_method,
                                       ncores = ncores)
 
         cat("Mean similarity after CRS = ", mean(similarities), "\n")
@@ -244,3 +262,18 @@ obtain_candidates_similarities <- function(image,
               similarities = similarities))
 
 }
+
+# constrained_init <- function(patch_neighbours, voxel_lookup_table, actual_voxels, n_templates) {
+#
+#   v <- which(voxel_lookup_table >= 0) - 1
+#   idx <- voxel_lookup_table[v + 1]
+#
+#   displ <- sample(patch_neighbours, replace = TRUE, size = n_templates * actual_voxels)
+#
+#   res <- rep(v, times = n_templates) + displ
+#   res[res < 0] <- 0
+#   res[res >= length(voxel_lookup_table)] <- length(voxel_lookup_table) - 1
+#
+#   return(res)
+#
+# }

@@ -77,3 +77,25 @@ double patch_similarity(double* psearch, double* normtrg, int n, double &sum_pse
 
 }
 
+
+double similarity(double* PatchImg, double* PatchTemplate, int n, int method = 0) {
+
+  double res = 0;
+
+  if (method == 0) {
+
+    double matchSum1 = 0;
+    double matchSSQ1 = 0;
+
+    res = patch_similarity(PatchTemplate, PatchImg, n, matchSum1, matchSSQ1);
+
+  } else {
+
+    res = SSDPatch(PatchImg, PatchTemplate, n);
+
+  }
+
+  return res;
+
+}
+

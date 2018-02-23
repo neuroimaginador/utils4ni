@@ -31,7 +31,6 @@ using namespace Rcpp;
 int count_eligible_voxels(int ndims,
                           int* dims,
                           int* mask,
-                          int limits,
                           int stride,
                           int* voxel_lookup_table) {
 
@@ -53,9 +52,9 @@ int count_eligible_voxels(int ndims,
         int i = x + dims[0] * y + dims[0] * dims[1] * z;
 
         if (mask[i] > 0 &&
-            x >= limits && x < dims[0] - limits &&
-            y >= limits && y < dims[1] - limits &&
-            z >= limits && z < dims[2] - limits &&
+            x >= 0 && x < dims[0] &&
+            y >= 0 && y < dims[1] &&
+            z >= 0 && z < dims[2] &&
             x % stride == 0 &&
             y % stride == 0 &&
             z % stride == 0) {
@@ -91,7 +90,6 @@ int count_elegible(NumericVector image,
 
   IntegerVector dims = image.attr("dim");
 
-  int limits = (int)((patch_size + search_size) / 2 + 1);
   int* mask = (int*)malloc(image.size() * sizeof(int));
   for (int i = 0; i < image.size(); i++) {
 
@@ -103,7 +101,6 @@ int count_elegible(NumericVector image,
   int actual_voxels = count_eligible_voxels(3,
                                             dims.begin(),
                                             mask,
-                                            limits,
                                             stride,
                                             voxel_lookup_table.begin());
 
@@ -123,13 +120,10 @@ int count_elegible_masked(NumericVector image,
 
   IntegerVector dims = image.attr("dim");
 
-  int limits = (int)((patch_size + search_size) / 2 + 1);
-
   // Count elegible voxels
   int actual_voxels = count_eligible_voxels(3,
                                             dims.begin(),
                                             mask.begin(),
-                                            limits,
                                             stride,
                                             voxel_lookup_table.begin());
 
@@ -158,7 +152,7 @@ void constrained_initialization_omp(NumericVector input_image,
 
   if (search_size % 2 == 0) search_size++;
 
-  int limits = (int)((patch_size + search_size) / 2 + 1);
+  // int limits = (int)((patch_size + search_size) / 2 + 1);
 
   // int n_voxels_image = input_image.size();
 
@@ -166,7 +160,7 @@ void constrained_initialization_omp(NumericVector input_image,
   if (search_size % 2 == 0) search_size++;
 
   // Added an omp pragma directive to parallelize the loop with ncores
-#pragma omp parallel for num_threads(ncores)
+// #pragma omp parallel for num_threads(ncores)
   for (int x = 0; x < dims[0]; x++) {
 
     for (int y = 0; y < dims[1]; y++) {
@@ -187,19 +181,19 @@ void constrained_initialization_omp(NumericVector input_image,
 
               x_displacement = rand_in_range(-search_size, search_size);
 
-            } while ((x + x_displacement <= limits) | (x + x_displacement > dims[0] - limits));
+            } while ((x + x_displacement < 0) | (x + x_displacement >= dims[0]));
 
             do {
 
               y_displacement = rand_in_range(-search_size, search_size);
 
-            } while ((y + y_displacement <= limits) | (y + y_displacement > dims[1] - limits));
+            } while ((y + y_displacement < 0) | (y + y_displacement >= dims[1]));
 
             do {
 
               z_displacement = rand_in_range(-search_size, search_size);
 
-            } while ((z + z_displacement <= limits) | (z + z_displacement > dims[2] - limits));
+            } while ((z + z_displacement < 0) | (z + z_displacement >= dims[2] ));
 
             int absolute_displacement = x_displacement + dims[0] * y_displacement + dims[0] * dims[1] * z_displacement;
             candidate = i + absolute_displacement;
@@ -227,6 +221,7 @@ void all_patches_similarity_omp(NumericVector input_image,
                                 IntegerVector patch_neighbours,
                                 IntegerVector kANN,
                                 NumericVector similarities,
+                                int method = 0,
                                 int ncores = 1) {
 
 
@@ -256,8 +251,8 @@ void all_patches_similarity_omp(NumericVector input_image,
       temp_values = (double*) malloc(n_neighbours_patch * sizeof(double));
 
       get_neighbours(voxel, patch_neighbours.begin(), input_patch, n_neighbours_patch);
-      get_image_value(input_image.begin(), input_patch, input_values, n_neighbours_patch);
-      normalize(input_values, n_neighbours_patch);
+      get_image_value(input_image.begin(), input_patch, input_values, n_neighbours_patch, 0, n_voxels_image);
+      if (method == 0) normalize(input_values, n_neighbours_patch);
 
       for (int k1 = 0; k1 < n_templates; k1++) {
 
@@ -265,11 +260,14 @@ void all_patches_similarity_omp(NumericVector input_image,
 
         get_neighbours(candidate, patch_neighbours.begin(), temp_neighs, n_neighbours_patch);
 
-        get_image_value(template4D.begin(), temp_neighs, temp_values, n_neighbours_patch);
+        get_image_value(template4D.begin(),
+                        temp_neighs,
+                        temp_values,
+                        n_neighbours_patch,
+                        k1 * n_voxels_image,
+                        (k1 + 1) * n_voxels_image);
 
-        double matchSum1 = 0, matchSSQ1 = 0;
-
-        double match = patch_similarity(temp_values, input_values, n_neighbours_patch, matchSum1, matchSSQ1);
+        double match = similarity(input_values, temp_values, n_neighbours_patch, method);
 
         similarities[k1 * actual_voxels + idx] = match;
 
@@ -299,6 +297,7 @@ void propagation_step_omp(NumericVector input_image,
                           int patch_size,
                           int stride,
                           NumericVector similarities,
+                          int method = 0,
                           int ncores = 1) {
 
   int n_voxels_image = input_image.size();
@@ -333,8 +332,8 @@ void propagation_step_omp(NumericVector input_image,
 
       // Normalize input patch
       get_neighbours(voxel, patch_neighbours.begin(), input_patch, n_neighbours_patch);
-      get_image_value(input_image.begin(), input_patch, input_values, n_neighbours_patch);
-      normalize(input_values, n_neighbours_patch);
+      get_image_value(input_image.begin(), input_patch, input_values, n_neighbours_patch, 0, n_voxels_image);
+      if (method == 0) normalize(input_values, n_neighbours_patch);
 
       // Loop over all k ANN.
       for (int k1 = 0; k1 < n_templates; k1++) {
@@ -366,11 +365,14 @@ void propagation_step_omp(NumericVector input_image,
 
             get_neighbours(k1 * n_voxels_image + candidate, patch_neighbours.begin(), temp_neighs, n_neighbours_patch);
 
-            get_image_value(template4D.begin(), temp_neighs, temp_values, n_neighbours_patch);
+            get_image_value(template4D.begin(),
+                            temp_neighs,
+                            temp_values,
+                            n_neighbours_patch,
+                            k1 * n_voxels_image,
+                            (k1 + 1) * n_voxels_image);
 
-            double matchSum1 = 0, matchSSQ1 = 0;
-
-            double match = patch_similarity(temp_values, input_values, n_neighbours_patch, matchSum1, matchSSQ1);
+            double match = similarity(input_values, temp_values, n_neighbours_patch, method);
 
             if (match < similarities[k1 * actual_voxels + idx]) {
 
@@ -413,6 +415,7 @@ void constrained_random_search_omp(NumericVector input_image,
                                    int search_size_max,
                                    NumericVector similarities,
                                    int max_random_neighbours,
+                                   int method = 0,
                                    int ncores = 1) {
 
 
@@ -429,7 +432,7 @@ void constrained_random_search_omp(NumericVector input_image,
   int *input_patch, *temp_neighs;
 
   int search_size = search_size_max / 2;
-  int lower_limit = patch_size % 2 == 0 ? (patch_size + 3) / 2 : (patch_size + 1) / 2;
+  int lower_limit = 0; //patch_size % 2 == 0 ? (patch_size + 3) / 2 : (patch_size + 1) / 2;
 
   while (search_size > 1)  {
 
@@ -453,8 +456,8 @@ void constrained_random_search_omp(NumericVector input_image,
 
         // Normalize input patch
         get_neighbours(voxel, patch_neighbours.begin(), input_patch, n_neighbours_patch);
-        get_image_value(input_image.begin(), input_patch, input_values, n_neighbours_patch);
-        normalize(input_values, n_neighbours_patch);
+        get_image_value(input_image.begin(), input_patch, input_values, n_neighbours_patch, 0, n_voxels_image);
+        if (method == 0) normalize(input_values, n_neighbours_patch);
 
         for (int k1 = 0; k1 < n_templates; k1++) {
 
@@ -492,12 +495,14 @@ void constrained_random_search_omp(NumericVector input_image,
 
             get_neighbours(k1 * n_voxels_image + candidate, patch_neighbours.begin(), temp_neighs, n_neighbours_patch);
 
-            get_image_value(template4D.begin(), temp_neighs, temp_values, n_neighbours_patch);
+            get_image_value(template4D.begin(),
+                            temp_neighs,
+                            temp_values,
+                            n_neighbours_patch,
+                            k1 * n_voxels_image,
+                            (k1 + 1) * n_voxels_image);
 
-            double matchSum1 = 0;
-            double matchSSQ1 = 0;
-
-            double match = patch_similarity(temp_values, input_values, n_neighbours_patch, matchSum1, matchSSQ1);
+            double match = similarity(input_values, temp_values, n_neighbours_patch, method);
 
             if (match < similarities[k1 * actual_voxels + idx_voxel]) {
 
@@ -526,205 +531,205 @@ void constrained_random_search_omp(NumericVector input_image,
 }
 
 
-// [[Rcpp::export]]
-void label_fusion_omp(IntegerVector labels4D,
-                      int actual_voxels,
-                      IntegerVector voxel_lookup_table,
-                      IntegerVector label_ids,
-                      IntegerVector kANN,
-                      IntegerVector patch_neighbours,
-                      int k,
-                      double lambda,
-                      double sigma2,
-                      NumericVector match,
-                      NumericVector new_voting,
-                      int ncores = 2) {
-
-  int n_neighbours_patch = patch_neighbours.size();
-  int n_voxels_image = voxel_lookup_table.size();
-  IntegerVector dims = labels4D.attr("dim");
-  int n_labels = label_ids.size();
-
-  double* similarities;
-  int* labels;
-  double* distances;
-
-  int* patch_seg;
-
-  int* input_patch;
-
-  int* temp_neighs;
-
-  int* counts = (int*) malloc(n_voxels_image * sizeof(int));
-  memset(counts, 0, n_voxels_image * sizeof(int));
-
-  int idx;
-
-  for (int voxel = 0; voxel < n_voxels_image; voxel++) {
-
-    idx = voxel_lookup_table[voxel];
-
-    if (idx >= 0) {
-
-      similarities = (double*) malloc(n_neighbours_patch * k * sizeof(double));
-      labels = (int*) malloc(n_neighbours_patch * k * sizeof(int));
-      distances = (double*) malloc(n_neighbours_patch * k * sizeof(double));
-
-      input_patch = (int*) malloc(n_neighbours_patch * sizeof(int));
-
-      // Compute the graylevel of the input image in the patch around given voxel
-      get_neighbours(voxel, patch_neighbours.begin(), input_patch, n_neighbours_patch);
-
-      // Added an omp pragma directive to parallelize the loop with ncores
-#pragma omp parallel for num_threads(ncores) private(temp_neighs, patch_seg) schedule(static)
-      for (int k1 = 0; k1 < k; k1++) {
-
-        int best_match = kANN[k1 * actual_voxels + idx];
-        int relative_index = best_match % n_voxels_image;
-
-        double distance = 0.0;
-
-        if (sigma2 > 0) {
-
-          int x_voxel = voxel % dims[0];
-          int x_candidate = relative_index % dims[0];
-          int y_voxel = ((voxel - x_voxel) / dims[0]) % dims[1];
-          int y_candidate = ((relative_index - x_candidate) / dims[0]) % dims[1];
-          int z_voxel = ((voxel - x_voxel) / dims[0] - y_voxel) / dims[1];
-          int z_candidate = ((relative_index - x_candidate) / dims[0] - y_candidate) / dims[1];
-
-          distance = (x_voxel - x_candidate) * (x_voxel - x_candidate);
-          distance += (y_voxel - y_candidate) * (y_voxel - y_candidate);
-          distance += (z_voxel - z_candidate) * (z_voxel - z_candidate);
-
-        }
-
-        temp_neighs = (int*) malloc(n_neighbours_patch * sizeof(int));
-        patch_seg = (int*) malloc(n_neighbours_patch * sizeof(int));
-
-        get_neighbours(kANN[k1 * actual_voxels + idx], patch_neighbours.begin(), temp_neighs, n_neighbours_patch);
-        get_label_value(labels4D.begin(), temp_neighs, patch_seg, n_neighbours_patch);
-
-        double simil = match[k1 * actual_voxels + idx];
-
-        // If we use the distances to neighboring patches in the search to weight the similarity
-        for (int neigh = 0; neigh < n_neighbours_patch; neigh++) {
-
-          similarities[k1 * n_neighbours_patch + neigh] = simil;
-          labels[k1 * n_neighbours_patch + neigh] = patch_seg[neigh];
-          distances[k1 * n_neighbours_patch + neigh] = distance;
-
-        }
-
-        free(temp_neighs);
-        free(patch_seg);
-
-      } // For all k
-
-
-      // Normalize the similarities
-      // First, compute the minimum similarity
-      double min_simil = 1.e100;
-      for (int temp = 0; temp < k; temp++) {
-
-        if (similarities[temp * n_neighbours_patch] < min_simil) {
-
-          min_simil = similarities[temp * n_neighbours_patch];
-
-        }
-
-      }
-      // double min_simil = find_minimum(similarities, k * n_neighbours_patch);
-
-
-      double h2 = lambda * min_simil + 1.e-15;
-      for (int i = 0; i < k * n_neighbours_patch; i++) {
-
-        similarities[i] = exp(-similarities[i] / h2 -  distances[i] / (sigma2 + 1.e-15));
-
-      }
-
-      // Compute the voting for each neighbour
-      double cumulative_similarity = 0;
-      for (int temp = 0; temp < k; temp++) {
-
-        cumulative_similarity += similarities[temp * n_neighbours_patch];
-
-      }
-
-      // For all labels except the first (probably label == 0)
-#pragma omp parallel for num_threads(ncores) schedule(dynamic)
-      for (int lb = 1; lb < n_labels; lb++) {
-
-        for (int i = 0; i < n_neighbours_patch; i++) {
-
-          int which_voxel = input_patch[i];
-
-          if (which_voxel > -1) {
-
-            counts[which_voxel]++;
-
-            double similarity = 0;
-
-            for (int temp = 0; temp < k; temp++) {
-
-              if (labels[temp * n_neighbours_patch + i] == label_ids[lb]) {
-
-                similarity += similarities[temp * n_neighbours_patch + i];
-
-              }
-
-            }
-
-            new_voting[lb * n_voxels_image + which_voxel] += similarity / cumulative_similarity;
-
-          }
-
-        }
-
-      }
-
-      free(input_patch);
-      free(similarities);
-      free(labels);
-      free(distances);
-
-    }
-
-  }
-
-#pragma omp parallel for num_threads(ncores) schedule(dynamic, 10000)
-  for (int voxel = 0; voxel < n_voxels_image; voxel++) {
-
-    double simil_0 = 1;
-    for (int lb = 1; lb < n_labels; lb++) {
-
-      simil_0 -= new_voting[lb * n_voxels_image + voxel];
-
-    }
-
-    new_voting[voxel] = simil_0;
-
-  }
-
-#pragma omp parallel for num_threads(ncores) schedule(dynamic, 10000)
-  for (int voxel = 0; voxel < n_voxels_image; voxel++) {
-
-    if (counts[voxel] > 0) {
-
-      for (int lb = 0; lb < n_labels; lb++) {
-
-        new_voting[lb * n_voxels_image + voxel] /= counts[voxel];
-
-      }
-
-    }
-
-  }
-
-  free(counts);
-
-}
+// // [[Rcpp::export]]
+// void label_fusion_omp(IntegerVector labels4D,
+//                       int actual_voxels,
+//                       IntegerVector voxel_lookup_table,
+//                       IntegerVector label_ids,
+//                       IntegerVector kANN,
+//                       IntegerVector patch_neighbours,
+//                       int k,
+//                       double lambda,
+//                       double sigma2,
+//                       NumericVector match,
+//                       NumericVector new_voting,
+//                       int ncores = 2) {
+//
+//   int n_neighbours_patch = patch_neighbours.size();
+//   int n_voxels_image = voxel_lookup_table.size();
+//   IntegerVector dims = labels4D.attr("dim");
+//   int n_labels = label_ids.size();
+//
+//   double* similarities;
+//   int* labels;
+//   double* distances;
+//
+//   int* patch_seg;
+//
+//   int* input_patch;
+//
+//   int* temp_neighs;
+//
+//   int* counts = (int*) malloc(n_voxels_image * sizeof(int));
+//   memset(counts, 0, n_voxels_image * sizeof(int));
+//
+//   int idx;
+//
+//   for (int voxel = 0; voxel < n_voxels_image; voxel++) {
+//
+//     idx = voxel_lookup_table[voxel];
+//
+//     if (idx >= 0) {
+//
+//       similarities = (double*) malloc(n_neighbours_patch * k * sizeof(double));
+//       labels = (int*) malloc(n_neighbours_patch * k * sizeof(int));
+//       distances = (double*) malloc(n_neighbours_patch * k * sizeof(double));
+//
+//       input_patch = (int*) malloc(n_neighbours_patch * sizeof(int));
+//
+//       // Compute the graylevel of the input image in the patch around given voxel
+//       get_neighbours(voxel, patch_neighbours.begin(), input_patch, n_neighbours_patch);
+//
+//       // Added an omp pragma directive to parallelize the loop with ncores
+// #pragma omp parallel for num_threads(ncores) private(temp_neighs, patch_seg) schedule(static)
+//       for (int k1 = 0; k1 < k; k1++) {
+//
+//         int best_match = kANN[k1 * actual_voxels + idx];
+//         int relative_index = best_match % n_voxels_image;
+//
+//         double distance = 0.0;
+//
+//         if (sigma2 > 0) {
+//
+//           int x_voxel = voxel % dims[0];
+//           int x_candidate = relative_index % dims[0];
+//           int y_voxel = ((voxel - x_voxel) / dims[0]) % dims[1];
+//           int y_candidate = ((relative_index - x_candidate) / dims[0]) % dims[1];
+//           int z_voxel = ((voxel - x_voxel) / dims[0] - y_voxel) / dims[1];
+//           int z_candidate = ((relative_index - x_candidate) / dims[0] - y_candidate) / dims[1];
+//
+//           distance = (x_voxel - x_candidate) * (x_voxel - x_candidate);
+//           distance += (y_voxel - y_candidate) * (y_voxel - y_candidate);
+//           distance += (z_voxel - z_candidate) * (z_voxel - z_candidate);
+//
+//         }
+//
+//         temp_neighs = (int*) malloc(n_neighbours_patch * sizeof(int));
+//         patch_seg = (int*) malloc(n_neighbours_patch * sizeof(int));
+//
+//         get_neighbours(kANN[k1 * actual_voxels + idx], patch_neighbours.begin(), temp_neighs, n_neighbours_patch);
+//         get_label_value(labels4D.begin(), temp_neighs, patch_seg, n_neighbours_patch);
+//
+//         double simil = match[k1 * actual_voxels + idx];
+//
+//         // If we use the distances to neighboring patches in the search to weight the similarity
+//         for (int neigh = 0; neigh < n_neighbours_patch; neigh++) {
+//
+//           similarities[k1 * n_neighbours_patch + neigh] = simil;
+//           labels[k1 * n_neighbours_patch + neigh] = patch_seg[neigh];
+//           distances[k1 * n_neighbours_patch + neigh] = distance;
+//
+//         }
+//
+//         free(temp_neighs);
+//         free(patch_seg);
+//
+//       } // For all k
+//
+//
+//       // Normalize the similarities
+//       // First, compute the minimum similarity
+//       double min_simil = 1.e100;
+//       for (int temp = 0; temp < k; temp++) {
+//
+//         if (similarities[temp * n_neighbours_patch] < min_simil) {
+//
+//           min_simil = similarities[temp * n_neighbours_patch];
+//
+//         }
+//
+//       }
+//       // double min_simil = find_minimum(similarities, k * n_neighbours_patch);
+//
+//
+//       double h2 = lambda * min_simil + 1.e-15;
+//       for (int i = 0; i < k * n_neighbours_patch; i++) {
+//
+//         similarities[i] = exp(-similarities[i] / h2 -  distances[i] / (sigma2 + 1.e-15));
+//
+//       }
+//
+//       // Compute the voting for each neighbour
+//       double cumulative_similarity = 0;
+//       for (int temp = 0; temp < k; temp++) {
+//
+//         cumulative_similarity += similarities[temp * n_neighbours_patch];
+//
+//       }
+//
+//       // For all labels except the first (probably label == 0)
+// #pragma omp parallel for num_threads(ncores) schedule(dynamic)
+//       for (int lb = 1; lb < n_labels; lb++) {
+//
+//         for (int i = 0; i < n_neighbours_patch; i++) {
+//
+//           int which_voxel = input_patch[i];
+//
+//           if (which_voxel > -1) {
+//
+//             counts[which_voxel]++;
+//
+//             double similarity = 0;
+//
+//             for (int temp = 0; temp < k; temp++) {
+//
+//               if (labels[temp * n_neighbours_patch + i] == label_ids[lb]) {
+//
+//                 similarity += similarities[temp * n_neighbours_patch + i];
+//
+//               }
+//
+//             }
+//
+//             new_voting[lb * n_voxels_image + which_voxel] += similarity / cumulative_similarity;
+//
+//           }
+//
+//         }
+//
+//       }
+//
+//       free(input_patch);
+//       free(similarities);
+//       free(labels);
+//       free(distances);
+//
+//     }
+//
+//   }
+//
+// #pragma omp parallel for num_threads(ncores) schedule(dynamic, 10000)
+//   for (int voxel = 0; voxel < n_voxels_image; voxel++) {
+//
+//     double simil_0 = 1;
+//     for (int lb = 1; lb < n_labels; lb++) {
+//
+//       simil_0 -= new_voting[lb * n_voxels_image + voxel];
+//
+//     }
+//
+//     new_voting[voxel] = simil_0;
+//
+//   }
+//
+// #pragma omp parallel for num_threads(ncores) schedule(dynamic, 10000)
+//   for (int voxel = 0; voxel < n_voxels_image; voxel++) {
+//
+//     if (counts[voxel] > 0) {
+//
+//       for (int lb = 0; lb < n_labels; lb++) {
+//
+//         new_voting[lb * n_voxels_image + voxel] /= counts[voxel];
+//
+//       }
+//
+//     }
+//
+//   }
+//
+//   free(counts);
+//
+// }
 
 
 // [[Rcpp::export]]
@@ -822,6 +827,17 @@ void label_fusion2_omp(IntegerVector labels4D,
           int candidate =  k1 * n_voxels_image + kANN[k1 * actual_voxels + idx_patch_center];
           int voxel_candidate = candidate + relative_difference;
 
+          if (voxel_candidate < k1 * n_voxels_image) {
+
+            voxel_candidate = k1 * n_voxels_image;
+
+          }
+
+          if (voxel_candidate >= (k1 + 1) * n_voxels_image) {
+
+            voxel_candidate = (k1 + 1) * n_voxels_image - 1;
+          }
+
           int lb = new_labels[labels4D[voxel_candidate]];
 
           if (lb >= 0)
@@ -866,26 +882,20 @@ void label_fusion2_omp(IntegerVector labels4D,
 
 // [[Rcpp::export]]
 void image_fusion_omp(NumericVector labels4D,
-                       int actual_voxels,
-                       IntegerVector voxel_lookup_table,
-                       IntegerVector kANN,
-                       IntegerVector patch_neighbours,
-                       double lambda,
-                       double sigma2,
-                       NumericVector match,
-                       NumericVector new_voting,
-                       IntegerVector voxel_candidate,
-                       int inner_patch_size,
-                       int ncores = 2) {
+                      int actual_voxels,
+                      IntegerVector voxel_lookup_table,
+                      IntegerVector kANN,
+                      IntegerVector patch_neighbours,
+                      double lambda,
+                      double sigma2,
+                      NumericVector match,
+                      NumericVector new_voting,
+                      IntegerVector voxel_candidate,
+                      int ncores = 2) {
 
   int n_neighbours_patch = patch_neighbours.size();
   int n_voxels_image = voxel_lookup_table.size();
   IntegerVector dims = labels4D.attr("dim");
-
-  int n_inner = pow(inner_patch_size, 3);
-  // int* inner_patch = (int*) malloc(n_inner * sizeof(int));
-
-  // get_neighbours_indices(dims.begin(), 3, inner_patch_size, inner_patch);
 
   int n_templates = dims[3];
 
@@ -950,16 +960,23 @@ void image_fusion_omp(NumericVector labels4D,
 
           int candidate =  k1 * n_voxels_image + kANN[k1 * actual_voxels + idx_patch_center];
           voxel_candidate[voxel] = candidate + relative_difference;
-          // voxel_candidate[candidate + relative_difference] = voxel;
 
+          if (voxel_candidate[voxel] < k1 * n_voxels_image) {
 
-          // for (int n = 0; n < n_inner; n++) {
+            voxel_candidate[voxel] = k1 * n_voxels_image;
 
-            double lb = labels4D[candidate + relative_difference];
+          }
 
-            new_voting[voxel] += lb * match[k1 * actual_voxels + idx_patch_center];
+          if (voxel_candidate[voxel] >= (k1 + 1) * n_voxels_image) {
 
-          // }
+            voxel_candidate[voxel] = (k1 + 1) * n_voxels_image - 1;
+
+          }
+
+          double lb = labels4D[voxel_candidate[voxel]];
+
+          new_voting[voxel] += lb * match[k1 * actual_voxels + idx_patch_center];
+
 
           counts += match[k1 * actual_voxels + idx_patch_center];
 
@@ -974,237 +991,229 @@ void image_fusion_omp(NumericVector labels4D,
 
     if (counts > 0) {
 
-      // for (int n = 0; n < n_inner; n++) {
-
-        // new_voting[voxel + inner_patch[n]] /= (counts * n_inner);
-
-      // }
-      //
       new_voting[voxel] /= counts;
-
 
     }
 
 
   } // All voxels
 
-  // free(inner_patch);
 
 }
 
 
-// [[Rcpp::export]]
-void label_fusion3_omp(IntegerVector labels4D,
-                       int actual_voxels,
-                       IntegerVector voxel_lookup_table,
-                       IntegerVector label_ids,
-                       IntegerVector kANN,
-                       IntegerVector patch_neighbours,
-                       int k,
-                       double lambda,
-                       double sigma2,
-                       NumericVector match,
-                       NumericVector new_voting,
-                       int ncores = 2) {
-
-  int n_neighbours_patch = patch_neighbours.size();
-  int n_voxels_image = voxel_lookup_table.size();
-  IntegerVector dims = labels4D.attr("dim");
-  int n_labels = label_ids.size();
-
-  double* similarities;
-  int* labels;
-  double* distances;
-
-  int* patch_seg;
-
-  int* input_patch;
-
-  int* temp_neighs;
-  int patch_size = (int)pow(n_neighbours_patch, 1/3);
-
-  int* counts = (int*) malloc(n_voxels_image * sizeof(int));
-  memset(counts, 0, n_voxels_image * sizeof(int));
-
-  int idx;
-
-  // Added an omp pragma directive to parallelize the loop with ncores
-#pragma omp parallel for num_threads(ncores) private(temp_neighs, patch_seg, similarities, labels, distances, input_patch) schedule(dynamic)
-  for (int init = 0; init < patch_size; init++) {
-
-    for (int x = init; x < dims[0]; x+=patch_size) {
-
-      for (int y = init; y < dims[1]; y+=patch_size) {
-
-        for (int z = init; z < dims[2]; z+=patch_size) {
-
-          int voxel = x + dims[0] * y + dims[0] * dims[1] * z;
-
-          idx = voxel_lookup_table[voxel];
-
-          if (idx >= 0) {
-
-            similarities = (double*) malloc(n_neighbours_patch * k * sizeof(double));
-            labels = (int*) malloc(n_neighbours_patch * k * sizeof(int));
-            distances = (double*) malloc(n_neighbours_patch * k * sizeof(double));
-
-            input_patch = (int*) malloc(n_neighbours_patch * sizeof(int));
-
-            // Compute the graylevel of the input image in the patch around given voxel
-            get_neighbours(voxel, patch_neighbours.begin(), input_patch, n_neighbours_patch);
-
-            for (int k1 = 0; k1 < k; k1++) {
-
-              int best_match = kANN[k1 * actual_voxels + idx];
-              int relative_index = best_match % n_voxels_image;
-
-              double distance = 0.0;
-
-              if (sigma2 > 0) {
-
-                int x_voxel = voxel % dims[0];
-                int x_candidate = relative_index % dims[0];
-                int y_voxel = ((voxel - x_voxel) / dims[0]) % dims[1];
-                int y_candidate = ((relative_index - x_candidate) / dims[0]) % dims[1];
-                int z_voxel = ((voxel - x_voxel) / dims[0] - y_voxel) / dims[1];
-                int z_candidate = ((relative_index - x_candidate) / dims[0] - y_candidate) / dims[1];
-
-                distance = (x_voxel - x_candidate) * (x_voxel - x_candidate);
-                distance += (y_voxel - y_candidate) * (y_voxel - y_candidate);
-                distance += (z_voxel - z_candidate) * (z_voxel - z_candidate);
-
-              }
-
-              temp_neighs = (int*) malloc(n_neighbours_patch * sizeof(int));
-              patch_seg = (int*) malloc(n_neighbours_patch * sizeof(int));
-
-              get_neighbours(kANN[k1 * actual_voxels + idx], patch_neighbours.begin(), temp_neighs, n_neighbours_patch);
-              get_label_value(labels4D.begin(), temp_neighs, patch_seg, n_neighbours_patch);
-
-              double simil = match[k1 * actual_voxels + idx];
-
-              // If we use the distances to neighboring patches in the search to weight the similarity
-              for (int neigh = 0; neigh < n_neighbours_patch; neigh++) {
-
-                similarities[k1 * n_neighbours_patch + neigh] = simil;
-                labels[k1 * n_neighbours_patch + neigh] = patch_seg[neigh];
-                distances[k1 * n_neighbours_patch + neigh] = distance;
-
-              }
-
-              free(temp_neighs);
-              free(patch_seg);
-
-            } // For all k
-
-
-            // Normalize the similarities
-            // First, compute the minimum similarity
-            double min_simil = 1.e100;
-            for (int temp = 0; temp < k; temp++) {
-
-              if (similarities[temp * n_neighbours_patch] < min_simil) {
-
-                min_simil = similarities[temp * n_neighbours_patch];
-
-              }
-
-            }
-            // double min_simil = find_minimum(similarities, k * n_neighbours_patch);
-
-
-            double h2 = lambda * min_simil + 1.e-15;
-            for (int i = 0; i < k * n_neighbours_patch; i++) {
-
-              similarities[i] = exp(-similarities[i] / h2 -  distances[i] / (sigma2 + 1.e-15));
-
-            }
-
-            // Compute the voting for each neighbour
-            double cumulative_similarity = 0;
-            for (int temp = 0; temp < k; temp++) {
-
-              cumulative_similarity += similarities[temp * n_neighbours_patch];
-
-            }
-
-            // For all labels except the first (probably label == 0)
-            // #pragma omp parallel for num_threads(ncores) schedule(dynamic)
-            for (int lb = 1; lb < n_labels; lb++) {
-
-              for (int i = 0; i < n_neighbours_patch; i++) {
-
-                int which_voxel = input_patch[i];
-
-                if (which_voxel > -1) {
-
-                  counts[which_voxel]++;
-
-                  double similarity = 0;
-
-                  for (int temp = 0; temp < k; temp++) {
-
-                    if (labels[temp * n_neighbours_patch + i] == label_ids[lb]) {
-
-                      similarity += similarities[temp * n_neighbours_patch + i];
-
-                    }
-
-                  }
-
-                  new_voting[lb * n_voxels_image + which_voxel] += similarity / cumulative_similarity;
-
-                }
-
-              }
-
-            }
-
-            free(input_patch);
-            free(similarities);
-            free(labels);
-            free(distances);
-
-          }
-
-
-        }
-
-      }
-
-    }
-
-  }
-
-#pragma omp parallel for num_threads(ncores) schedule(dynamic, 10000)
-  for (int voxel = 0; voxel < n_voxels_image; voxel++) {
-
-    double simil_0 = 1;
-    for (int lb = 1; lb < n_labels; lb++) {
-
-      simil_0 -= new_voting[lb * n_voxels_image + voxel];
-
-    }
-
-    new_voting[voxel] = simil_0;
-
-  }
-
-#pragma omp parallel for num_threads(ncores) schedule(dynamic, 10000)
-  for (int voxel = 0; voxel < n_voxels_image; voxel++) {
-
-    if (counts[voxel] > 0) {
-
-      for (int lb = 0; lb < n_labels; lb++) {
-
-        new_voting[lb * n_voxels_image + voxel] /= counts[voxel];
-
-      }
-
-    }
-
-  }
-
-  free(counts);
-
-}
+// // [[Rcpp::export]]
+// void label_fusion3_omp(IntegerVector labels4D,
+//                        int actual_voxels,
+//                        IntegerVector voxel_lookup_table,
+//                        IntegerVector label_ids,
+//                        IntegerVector kANN,
+//                        IntegerVector patch_neighbours,
+//                        int k,
+//                        double lambda,
+//                        double sigma2,
+//                        NumericVector match,
+//                        NumericVector new_voting,
+//                        int ncores = 2) {
+//
+//   int n_neighbours_patch = patch_neighbours.size();
+//   int n_voxels_image = voxel_lookup_table.size();
+//   IntegerVector dims = labels4D.attr("dim");
+//   int n_labels = label_ids.size();
+//
+//   double* similarities;
+//   int* labels;
+//   double* distances;
+//
+//   int* patch_seg;
+//
+//   int* input_patch;
+//
+//   int* temp_neighs;
+//   int patch_size = (int)pow(n_neighbours_patch, 1/3);
+//
+//   int* counts = (int*) malloc(n_voxels_image * sizeof(int));
+//   memset(counts, 0, n_voxels_image * sizeof(int));
+//
+//   int idx;
+//
+//   // Added an omp pragma directive to parallelize the loop with ncores
+// #pragma omp parallel for num_threads(ncores) private(temp_neighs, patch_seg, similarities, labels, distances, input_patch) schedule(dynamic)
+//   for (int init = 0; init < patch_size; init++) {
+//
+//     for (int x = init; x < dims[0]; x+=patch_size) {
+//
+//       for (int y = init; y < dims[1]; y+=patch_size) {
+//
+//         for (int z = init; z < dims[2]; z+=patch_size) {
+//
+//           int voxel = x + dims[0] * y + dims[0] * dims[1] * z;
+//
+//           idx = voxel_lookup_table[voxel];
+//
+//           if (idx >= 0) {
+//
+//             similarities = (double*) malloc(n_neighbours_patch * k * sizeof(double));
+//             labels = (int*) malloc(n_neighbours_patch * k * sizeof(int));
+//             distances = (double*) malloc(n_neighbours_patch * k * sizeof(double));
+//
+//             input_patch = (int*) malloc(n_neighbours_patch * sizeof(int));
+//
+//             // Compute the graylevel of the input image in the patch around given voxel
+//             get_neighbours(voxel, patch_neighbours.begin(), input_patch, n_neighbours_patch);
+//
+//             for (int k1 = 0; k1 < k; k1++) {
+//
+//               int best_match = kANN[k1 * actual_voxels + idx];
+//               int relative_index = best_match % n_voxels_image;
+//
+//               double distance = 0.0;
+//
+//               if (sigma2 > 0) {
+//
+//                 int x_voxel = voxel % dims[0];
+//                 int x_candidate = relative_index % dims[0];
+//                 int y_voxel = ((voxel - x_voxel) / dims[0]) % dims[1];
+//                 int y_candidate = ((relative_index - x_candidate) / dims[0]) % dims[1];
+//                 int z_voxel = ((voxel - x_voxel) / dims[0] - y_voxel) / dims[1];
+//                 int z_candidate = ((relative_index - x_candidate) / dims[0] - y_candidate) / dims[1];
+//
+//                 distance = (x_voxel - x_candidate) * (x_voxel - x_candidate);
+//                 distance += (y_voxel - y_candidate) * (y_voxel - y_candidate);
+//                 distance += (z_voxel - z_candidate) * (z_voxel - z_candidate);
+//
+//               }
+//
+//               temp_neighs = (int*) malloc(n_neighbours_patch * sizeof(int));
+//               patch_seg = (int*) malloc(n_neighbours_patch * sizeof(int));
+//
+//               get_neighbours(kANN[k1 * actual_voxels + idx], patch_neighbours.begin(), temp_neighs, n_neighbours_patch);
+//               get_label_value(labels4D.begin(), temp_neighs, patch_seg, n_neighbours_patch);
+//
+//               double simil = match[k1 * actual_voxels + idx];
+//
+//               // If we use the distances to neighboring patches in the search to weight the similarity
+//               for (int neigh = 0; neigh < n_neighbours_patch; neigh++) {
+//
+//                 similarities[k1 * n_neighbours_patch + neigh] = simil;
+//                 labels[k1 * n_neighbours_patch + neigh] = patch_seg[neigh];
+//                 distances[k1 * n_neighbours_patch + neigh] = distance;
+//
+//               }
+//
+//               free(temp_neighs);
+//               free(patch_seg);
+//
+//             } // For all k
+//
+//
+//             // Normalize the similarities
+//             // First, compute the minimum similarity
+//             double min_simil = 1.e100;
+//             for (int temp = 0; temp < k; temp++) {
+//
+//               if (similarities[temp * n_neighbours_patch] < min_simil) {
+//
+//                 min_simil = similarities[temp * n_neighbours_patch];
+//
+//               }
+//
+//             }
+//             // double min_simil = find_minimum(similarities, k * n_neighbours_patch);
+//
+//
+//             double h2 = lambda * min_simil + 1.e-15;
+//             for (int i = 0; i < k * n_neighbours_patch; i++) {
+//
+//               similarities[i] = exp(-similarities[i] / h2 -  distances[i] / (sigma2 + 1.e-15));
+//
+//             }
+//
+//             // Compute the voting for each neighbour
+//             double cumulative_similarity = 0;
+//             for (int temp = 0; temp < k; temp++) {
+//
+//               cumulative_similarity += similarities[temp * n_neighbours_patch];
+//
+//             }
+//
+//             // For all labels except the first (probably label == 0)
+//             // #pragma omp parallel for num_threads(ncores) schedule(dynamic)
+//             for (int lb = 1; lb < n_labels; lb++) {
+//
+//               for (int i = 0; i < n_neighbours_patch; i++) {
+//
+//                 int which_voxel = input_patch[i];
+//
+//                 if (which_voxel > -1) {
+//
+//                   counts[which_voxel]++;
+//
+//                   double similarity = 0;
+//
+//                   for (int temp = 0; temp < k; temp++) {
+//
+//                     if (labels[temp * n_neighbours_patch + i] == label_ids[lb]) {
+//
+//                       similarity += similarities[temp * n_neighbours_patch + i];
+//
+//                     }
+//
+//                   }
+//
+//                   new_voting[lb * n_voxels_image + which_voxel] += similarity / cumulative_similarity;
+//
+//                 }
+//
+//               }
+//
+//             }
+//
+//             free(input_patch);
+//             free(similarities);
+//             free(labels);
+//             free(distances);
+//
+//           }
+//
+//
+//         }
+//
+//       }
+//
+//     }
+//
+//   }
+//
+// #pragma omp parallel for num_threads(ncores) schedule(dynamic, 10000)
+//   for (int voxel = 0; voxel < n_voxels_image; voxel++) {
+//
+//     double simil_0 = 1;
+//     for (int lb = 1; lb < n_labels; lb++) {
+//
+//       simil_0 -= new_voting[lb * n_voxels_image + voxel];
+//
+//     }
+//
+//     new_voting[voxel] = simil_0;
+//
+//   }
+//
+// #pragma omp parallel for num_threads(ncores) schedule(dynamic, 10000)
+//   for (int voxel = 0; voxel < n_voxels_image; voxel++) {
+//
+//     if (counts[voxel] > 0) {
+//
+//       for (int lb = 0; lb < n_labels; lb++) {
+//
+//         new_voting[lb * n_voxels_image + voxel] /= counts[voxel];
+//
+//       }
+//
+//     }
+//
+//   }
+//
+//   free(counts);
+//
+// }

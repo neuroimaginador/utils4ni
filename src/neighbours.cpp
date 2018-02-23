@@ -42,6 +42,24 @@ void get_image_value(const double* image, int* idx, double* values, int n) {
 
 }
 
+void get_image_value(const double* image, int* idx, double* values, int n, int initial_offset, int end_offset) {
+
+  for (int i = 0; i < n; i++) {
+
+    if ((idx[i] >= initial_offset) && (idx[i] < end_offset)) {
+
+      values[i] = image[idx[i]];
+
+    } else {
+
+      values[i] = -1;
+
+    }
+
+  }
+
+}
+
 void get_label_value(const int* image, int* idx, int* values, int n) {
 
   for (int i = 0; i < n; i++) {
@@ -52,6 +70,23 @@ void get_label_value(const int* image, int* idx, int* values, int n) {
 
 }
 
+void get_label_value(const int* image, int* idx, int* values, int n, int initial_offset, int end_offset) {
+
+  for (int i = 0; i < n; i++) {
+
+    if ((idx[i] >= initial_offset) && (idx[i] < end_offset)) {
+
+      values[i] = image[idx[i]];
+
+    } else {
+
+      values[i] = 0;
+
+    }
+
+  }
+
+}
 
 
 void get_neighbours_relative_coordinates(IntegerVector array,

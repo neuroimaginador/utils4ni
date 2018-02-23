@@ -1,6 +1,9 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
+# define CUBE(x)   ((x) * (x) * (x))
+# define SQR(x)    ((x) * (x))
+
 // This is a simple example of exporting a C++ function to R. You can
 // source this function into an R session using the Rcpp::sourceCpp
 // function (or via the Source button on the editor toolbar). Learn
@@ -55,6 +58,69 @@ float evaluate_volume(double* vol, int* size, int x, int y, int z) {
 
 }
 
+// https://github.com/Washington-University/gradunwarp/blob/master/gradunwarp/core/interp3_ext.c
+float TriCubic (float px, float py, float pz, double* volume, int xDim, int yDim, int zDim)
+{
+  int             x, y, z;
+  int    i, j, k;
+  float           dx, dy, dz;
+  // float *pv;
+  int index;
+  float           u[4], v[4], w[4];
+  float           r[4], q[4];
+  float           vox = 0;
+  int             xyDim;
+
+  xyDim = xDim * yDim;
+
+  x = (int) px, y = (int) py, z = (int) pz;
+  // necessary evil truncating at dim-2 because tricubic needs 2 more values
+  // which is criminal near edges
+  // future work includes doing trilinear for edge cases
+  // range checking is extremely important here
+  if (x < 2 || x > xDim-3 || y < 2 || y > yDim-3 || z < 2 || z > zDim-3)
+    return (0);
+
+  dx = px - (float) x, dy = py - (float) y, dz = pz - (float) z;
+  index = (x - 1) + (y - 1) * xDim + (z - 1) * xyDim;
+
+  /* factors for Catmull-Rom interpolation */
+
+  u[0] = -0.5 * CUBE (dx) + SQR (dx) - 0.5 * dx;
+  u[1] = 1.5 * CUBE (dx) - 2.5 * SQR (dx) + 1;
+  u[2] = -1.5 * CUBE (dx) + 2 * SQR (dx) + 0.5 * dx;
+  u[3] = 0.5 * CUBE (dx) - 0.5 * SQR (dx);
+
+  v[0] = -0.5 * CUBE (dy) + SQR (dy) - 0.5 * dy;
+  v[1] = 1.5 * CUBE (dy) - 2.5 * SQR (dy) + 1;
+  v[2] = -1.5 * CUBE (dy) + 2 * SQR (dy) + 0.5 * dy;
+  v[3] = 0.5 * CUBE (dy) - 0.5 * SQR (dy);
+
+  w[0] = -0.5 * CUBE (dz) + SQR (dz) - 0.5 * dz;
+  w[1] = 1.5 * CUBE (dz) - 2.5 * SQR (dz) + 1;
+  w[2] = -1.5 * CUBE (dz) + 2 * SQR (dz) + 0.5 * dz;
+  w[3] = 0.5 * CUBE (dz) - 0.5 * SQR (dz);
+
+  for (k = 0; k < 4; k++)
+  {
+    q[k] = 0;
+    for (j = 0; j < 4; j++)
+    {
+      r[j] = 0;
+      for (i = 0; i < 4; i++)
+      {
+        r[j] += u[i] * volume[index];
+        index++;
+      }
+      q[k] += v[j] * r[j];
+      index += xDim - 4;
+    }
+    vox += w[k] * q[k];
+    index += xyDim - 4 * xDim;
+  }
+  return vox;
+}
+
 //Trilinear interpolation kernel, wrapped from FLIRT
 float trilinear_interpolation(float v000, float v001, float v010,
                               float v011, float v100, float v101,
@@ -106,6 +172,14 @@ float interpolate(double* vol, int* vol_size,
                   float point_x, float point_y, float point_z,
                   int method) {
 
+  if (method == 3) {
+
+    float result = TriCubic (point_x, point_y, point_z, vol, vol_size[0], vol_size[1], vol_size[2]);
+
+    return result;
+
+  }
+
   int ix, iy, iz;
   ix = (int) floor(point_x);
   iy = (int) floor(point_y);
@@ -126,7 +200,7 @@ float interpolate(double* vol, int* vol_size,
   v111 = evaluate_volume(vol, vol_size, ix + 1, iy + 1, iz + 1);
 
   float result;
-  if (method == 3) {
+  if (method == 1) {
 
     //Use trilinear interpolation
     result = trilinear_interpolation(v000, v001, v010, v011, v100, v101, v110, v111, dx, dy, dz);

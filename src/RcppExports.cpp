@@ -364,8 +364,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // all_patches_similarity_omp
-void all_patches_similarity_omp(NumericVector input_image, NumericVector template4D, int actual_voxels, IntegerVector voxel_lookup_table, IntegerVector patch_neighbours, IntegerVector kANN, NumericVector similarities, int ncores);
-RcppExport SEXP _utils4ni_all_patches_similarity_omp(SEXP input_imageSEXP, SEXP template4DSEXP, SEXP actual_voxelsSEXP, SEXP voxel_lookup_tableSEXP, SEXP patch_neighboursSEXP, SEXP kANNSEXP, SEXP similaritiesSEXP, SEXP ncoresSEXP) {
+void all_patches_similarity_omp(NumericVector input_image, NumericVector template4D, int actual_voxels, IntegerVector voxel_lookup_table, IntegerVector patch_neighbours, IntegerVector kANN, NumericVector similarities, int method, int ncores);
+RcppExport SEXP _utils4ni_all_patches_similarity_omp(SEXP input_imageSEXP, SEXP template4DSEXP, SEXP actual_voxelsSEXP, SEXP voxel_lookup_tableSEXP, SEXP patch_neighboursSEXP, SEXP kANNSEXP, SEXP similaritiesSEXP, SEXP methodSEXP, SEXP ncoresSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type input_image(input_imageSEXP);
@@ -375,14 +375,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< IntegerVector >::type patch_neighbours(patch_neighboursSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type kANN(kANNSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type similarities(similaritiesSEXP);
+    Rcpp::traits::input_parameter< int >::type method(methodSEXP);
     Rcpp::traits::input_parameter< int >::type ncores(ncoresSEXP);
-    all_patches_similarity_omp(input_image, template4D, actual_voxels, voxel_lookup_table, patch_neighbours, kANN, similarities, ncores);
+    all_patches_similarity_omp(input_image, template4D, actual_voxels, voxel_lookup_table, patch_neighbours, kANN, similarities, method, ncores);
     return R_NilValue;
 END_RCPP
 }
 // propagation_step_omp
-void propagation_step_omp(NumericVector input_image, NumericVector template4D, int actual_voxels, IntegerVector voxel_lookup_table, IntegerVector patch_neighbours, IntegerVector kANN, int direction, int patch_size, int stride, NumericVector similarities, int ncores);
-RcppExport SEXP _utils4ni_propagation_step_omp(SEXP input_imageSEXP, SEXP template4DSEXP, SEXP actual_voxelsSEXP, SEXP voxel_lookup_tableSEXP, SEXP patch_neighboursSEXP, SEXP kANNSEXP, SEXP directionSEXP, SEXP patch_sizeSEXP, SEXP strideSEXP, SEXP similaritiesSEXP, SEXP ncoresSEXP) {
+void propagation_step_omp(NumericVector input_image, NumericVector template4D, int actual_voxels, IntegerVector voxel_lookup_table, IntegerVector patch_neighbours, IntegerVector kANN, int direction, int patch_size, int stride, NumericVector similarities, int method, int ncores);
+RcppExport SEXP _utils4ni_propagation_step_omp(SEXP input_imageSEXP, SEXP template4DSEXP, SEXP actual_voxelsSEXP, SEXP voxel_lookup_tableSEXP, SEXP patch_neighboursSEXP, SEXP kANNSEXP, SEXP directionSEXP, SEXP patch_sizeSEXP, SEXP strideSEXP, SEXP similaritiesSEXP, SEXP methodSEXP, SEXP ncoresSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type input_image(input_imageSEXP);
@@ -395,14 +396,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type patch_size(patch_sizeSEXP);
     Rcpp::traits::input_parameter< int >::type stride(strideSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type similarities(similaritiesSEXP);
+    Rcpp::traits::input_parameter< int >::type method(methodSEXP);
     Rcpp::traits::input_parameter< int >::type ncores(ncoresSEXP);
-    propagation_step_omp(input_image, template4D, actual_voxels, voxel_lookup_table, patch_neighbours, kANN, direction, patch_size, stride, similarities, ncores);
+    propagation_step_omp(input_image, template4D, actual_voxels, voxel_lookup_table, patch_neighbours, kANN, direction, patch_size, stride, similarities, method, ncores);
     return R_NilValue;
 END_RCPP
 }
 // constrained_random_search_omp
-void constrained_random_search_omp(NumericVector input_image, NumericVector template4D, int actual_voxels, IntegerVector voxel_lookup_table, IntegerVector kANN, int patch_size, IntegerVector patch_neighbours, int search_size_max, NumericVector similarities, int max_random_neighbours, int ncores);
-RcppExport SEXP _utils4ni_constrained_random_search_omp(SEXP input_imageSEXP, SEXP template4DSEXP, SEXP actual_voxelsSEXP, SEXP voxel_lookup_tableSEXP, SEXP kANNSEXP, SEXP patch_sizeSEXP, SEXP patch_neighboursSEXP, SEXP search_size_maxSEXP, SEXP similaritiesSEXP, SEXP max_random_neighboursSEXP, SEXP ncoresSEXP) {
+void constrained_random_search_omp(NumericVector input_image, NumericVector template4D, int actual_voxels, IntegerVector voxel_lookup_table, IntegerVector kANN, int patch_size, IntegerVector patch_neighbours, int search_size_max, NumericVector similarities, int max_random_neighbours, int method, int ncores);
+RcppExport SEXP _utils4ni_constrained_random_search_omp(SEXP input_imageSEXP, SEXP template4DSEXP, SEXP actual_voxelsSEXP, SEXP voxel_lookup_tableSEXP, SEXP kANNSEXP, SEXP patch_sizeSEXP, SEXP patch_neighboursSEXP, SEXP search_size_maxSEXP, SEXP similaritiesSEXP, SEXP max_random_neighboursSEXP, SEXP methodSEXP, SEXP ncoresSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type input_image(input_imageSEXP);
@@ -415,29 +417,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type search_size_max(search_size_maxSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type similarities(similaritiesSEXP);
     Rcpp::traits::input_parameter< int >::type max_random_neighbours(max_random_neighboursSEXP);
+    Rcpp::traits::input_parameter< int >::type method(methodSEXP);
     Rcpp::traits::input_parameter< int >::type ncores(ncoresSEXP);
-    constrained_random_search_omp(input_image, template4D, actual_voxels, voxel_lookup_table, kANN, patch_size, patch_neighbours, search_size_max, similarities, max_random_neighbours, ncores);
-    return R_NilValue;
-END_RCPP
-}
-// label_fusion_omp
-void label_fusion_omp(IntegerVector labels4D, int actual_voxels, IntegerVector voxel_lookup_table, IntegerVector label_ids, IntegerVector kANN, IntegerVector patch_neighbours, int k, double lambda, double sigma2, NumericVector match, NumericVector new_voting, int ncores);
-RcppExport SEXP _utils4ni_label_fusion_omp(SEXP labels4DSEXP, SEXP actual_voxelsSEXP, SEXP voxel_lookup_tableSEXP, SEXP label_idsSEXP, SEXP kANNSEXP, SEXP patch_neighboursSEXP, SEXP kSEXP, SEXP lambdaSEXP, SEXP sigma2SEXP, SEXP matchSEXP, SEXP new_votingSEXP, SEXP ncoresSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< IntegerVector >::type labels4D(labels4DSEXP);
-    Rcpp::traits::input_parameter< int >::type actual_voxels(actual_voxelsSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type voxel_lookup_table(voxel_lookup_tableSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type label_ids(label_idsSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type kANN(kANNSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type patch_neighbours(patch_neighboursSEXP);
-    Rcpp::traits::input_parameter< int >::type k(kSEXP);
-    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
-    Rcpp::traits::input_parameter< double >::type sigma2(sigma2SEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type match(matchSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type new_voting(new_votingSEXP);
-    Rcpp::traits::input_parameter< int >::type ncores(ncoresSEXP);
-    label_fusion_omp(labels4D, actual_voxels, voxel_lookup_table, label_ids, kANN, patch_neighbours, k, lambda, sigma2, match, new_voting, ncores);
+    constrained_random_search_omp(input_image, template4D, actual_voxels, voxel_lookup_table, kANN, patch_size, patch_neighbours, search_size_max, similarities, max_random_neighbours, method, ncores);
     return R_NilValue;
 END_RCPP
 }
@@ -462,8 +444,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // image_fusion_omp
-void image_fusion_omp(NumericVector labels4D, int actual_voxels, IntegerVector voxel_lookup_table, IntegerVector kANN, IntegerVector patch_neighbours, double lambda, double sigma2, NumericVector match, NumericVector new_voting, IntegerVector voxel_candidate, int inner_patch_size, int ncores);
-RcppExport SEXP _utils4ni_image_fusion_omp(SEXP labels4DSEXP, SEXP actual_voxelsSEXP, SEXP voxel_lookup_tableSEXP, SEXP kANNSEXP, SEXP patch_neighboursSEXP, SEXP lambdaSEXP, SEXP sigma2SEXP, SEXP matchSEXP, SEXP new_votingSEXP, SEXP voxel_candidateSEXP, SEXP inner_patch_sizeSEXP, SEXP ncoresSEXP) {
+void image_fusion_omp(NumericVector labels4D, int actual_voxels, IntegerVector voxel_lookup_table, IntegerVector kANN, IntegerVector patch_neighbours, double lambda, double sigma2, NumericVector match, NumericVector new_voting, IntegerVector voxel_candidate, int ncores);
+RcppExport SEXP _utils4ni_image_fusion_omp(SEXP labels4DSEXP, SEXP actual_voxelsSEXP, SEXP voxel_lookup_tableSEXP, SEXP kANNSEXP, SEXP patch_neighboursSEXP, SEXP lambdaSEXP, SEXP sigma2SEXP, SEXP matchSEXP, SEXP new_votingSEXP, SEXP voxel_candidateSEXP, SEXP ncoresSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type labels4D(labels4DSEXP);
@@ -476,30 +458,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type match(matchSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type new_voting(new_votingSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type voxel_candidate(voxel_candidateSEXP);
-    Rcpp::traits::input_parameter< int >::type inner_patch_size(inner_patch_sizeSEXP);
     Rcpp::traits::input_parameter< int >::type ncores(ncoresSEXP);
-    image_fusion_omp(labels4D, actual_voxels, voxel_lookup_table, kANN, patch_neighbours, lambda, sigma2, match, new_voting, voxel_candidate, inner_patch_size, ncores);
-    return R_NilValue;
-END_RCPP
-}
-// label_fusion3_omp
-void label_fusion3_omp(IntegerVector labels4D, int actual_voxels, IntegerVector voxel_lookup_table, IntegerVector label_ids, IntegerVector kANN, IntegerVector patch_neighbours, int k, double lambda, double sigma2, NumericVector match, NumericVector new_voting, int ncores);
-RcppExport SEXP _utils4ni_label_fusion3_omp(SEXP labels4DSEXP, SEXP actual_voxelsSEXP, SEXP voxel_lookup_tableSEXP, SEXP label_idsSEXP, SEXP kANNSEXP, SEXP patch_neighboursSEXP, SEXP kSEXP, SEXP lambdaSEXP, SEXP sigma2SEXP, SEXP matchSEXP, SEXP new_votingSEXP, SEXP ncoresSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< IntegerVector >::type labels4D(labels4DSEXP);
-    Rcpp::traits::input_parameter< int >::type actual_voxels(actual_voxelsSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type voxel_lookup_table(voxel_lookup_tableSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type label_ids(label_idsSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type kANN(kANNSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type patch_neighbours(patch_neighboursSEXP);
-    Rcpp::traits::input_parameter< int >::type k(kSEXP);
-    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
-    Rcpp::traits::input_parameter< double >::type sigma2(sigma2SEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type match(matchSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type new_voting(new_votingSEXP);
-    Rcpp::traits::input_parameter< int >::type ncores(ncoresSEXP);
-    label_fusion3_omp(labels4D, actual_voxels, voxel_lookup_table, label_ids, kANN, patch_neighbours, k, lambda, sigma2, match, new_voting, ncores);
+    image_fusion_omp(labels4D, actual_voxels, voxel_lookup_table, kANN, patch_neighbours, lambda, sigma2, match, new_voting, voxel_candidate, ncores);
     return R_NilValue;
 END_RCPP
 }
@@ -684,13 +644,11 @@ static const R_CallMethodDef CallEntries[] = {
     {"_utils4ni_count_elegible", (DL_FUNC) &_utils4ni_count_elegible, 5},
     {"_utils4ni_count_elegible_masked", (DL_FUNC) &_utils4ni_count_elegible_masked, 6},
     {"_utils4ni_constrained_initialization_omp", (DL_FUNC) &_utils4ni_constrained_initialization_omp, 8},
-    {"_utils4ni_all_patches_similarity_omp", (DL_FUNC) &_utils4ni_all_patches_similarity_omp, 8},
-    {"_utils4ni_propagation_step_omp", (DL_FUNC) &_utils4ni_propagation_step_omp, 11},
-    {"_utils4ni_constrained_random_search_omp", (DL_FUNC) &_utils4ni_constrained_random_search_omp, 11},
-    {"_utils4ni_label_fusion_omp", (DL_FUNC) &_utils4ni_label_fusion_omp, 12},
+    {"_utils4ni_all_patches_similarity_omp", (DL_FUNC) &_utils4ni_all_patches_similarity_omp, 9},
+    {"_utils4ni_propagation_step_omp", (DL_FUNC) &_utils4ni_propagation_step_omp, 12},
+    {"_utils4ni_constrained_random_search_omp", (DL_FUNC) &_utils4ni_constrained_random_search_omp, 12},
     {"_utils4ni_label_fusion2_omp", (DL_FUNC) &_utils4ni_label_fusion2_omp, 11},
-    {"_utils4ni_image_fusion_omp", (DL_FUNC) &_utils4ni_image_fusion_omp, 12},
-    {"_utils4ni_label_fusion3_omp", (DL_FUNC) &_utils4ni_label_fusion3_omp, 12},
+    {"_utils4ni_image_fusion_omp", (DL_FUNC) &_utils4ni_image_fusion_omp, 11},
     {"_utils4ni_regularize", (DL_FUNC) &_utils4ni_regularize, 3},
     {"_utils4ni_sum_4d", (DL_FUNC) &_utils4ni_sum_4d, 1},
     {"_utils4ni_sum_by_ROI", (DL_FUNC) &_utils4ni_sum_by_ROI, 2},

@@ -50,11 +50,11 @@ void regularize(double* input,
           double cumul = 0.0;
           double cumul_kernel = 0.0;
 
-          for (int xdisp = -search_limit; xdisp < search_limit; xdisp++) {
+          for (int xdisp = -search_limit; xdisp <= search_limit; xdisp++) {
 
-            for (int ydisp = -search_limit; ydisp < search_limit; ydisp++) {
+            for (int ydisp = -search_limit; ydisp <= search_limit; ydisp++) {
 
-              for (int zdisp = -search_limit; zdisp < search_limit; zdisp++) {
+              for (int zdisp = -search_limit; zdisp <= search_limit; zdisp++) {
 
                 int loc_kernel = (xdisp + search_limit) + kernel_width * (ydisp + search_limit) + kernel_width * kernel_width * (zdisp + search_limit);
                 int loc_image = (x + xdisp) + dims[0] * (y + ydisp) + dims[0] * dims[1] * (z + zdisp);
@@ -107,11 +107,11 @@ void regularize(double* input,
             double cumul = 0.0;
             double cumul_kernel = 0.0;
 
-            for (int xdisp = -search_limit; xdisp < search_limit; xdisp++) {
+            for (int xdisp = -search_limit; xdisp <= search_limit; xdisp++) {
 
-              for (int ydisp = -search_limit; ydisp < search_limit; ydisp++) {
+              for (int ydisp = -search_limit; ydisp <= search_limit; ydisp++) {
 
-                for (int zdisp = -search_limit; zdisp < search_limit; zdisp++) {
+                for (int zdisp = -search_limit; zdisp <= search_limit; zdisp++) {
 
                   int loc_kernel = (xdisp + search_limit) + kernel_width * (ydisp + search_limit) + kernel_width * kernel_width * (zdisp + search_limit);
                   int loc_image = (x + xdisp) + dims[0] * (y + ydisp) + dims[0] * dims[1] * (z + zdisp) +  dims[0] * dims[1] * dims[2] * k;

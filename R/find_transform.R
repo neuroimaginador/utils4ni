@@ -50,6 +50,7 @@ find_transform <- function(source_image,
                                          target_coords = target_coords,
                                          target_dims = dim(target_image),
                                          method = method[1],
+                                         sigma = sigma,
                                          kernel = kernel)
 
 
@@ -74,6 +75,7 @@ compute_deformation_field <- function(source_coords,
                                       target_coords,
                                       target_dims,
                                       method = c("interpolation", "tps", "mixture"),
+                                      sigma = 1,
                                       kernel_size = 0) {
 
   displ <- target_coords - source_coords
@@ -117,7 +119,7 @@ compute_deformation_field <- function(source_coords,
 
     if (kernel_size > 0) {
 
-      Dx_norm <- iterative_blur(image = Dx2, kernel_size = kernel_size, ncores = parallel::detectCores() - 1)
+      Dx_norm <- iterative_blur(image = Dx2, sigma = sigma, kernel_size = kernel_size, ncores = parallel::detectCores() - 1)
 
     } else Dx_norm <- Dx2
 
@@ -133,7 +135,7 @@ compute_deformation_field <- function(source_coords,
 
     if (kernel_size > 0) {
 
-      Dy_norm <- iterative_blur(image = Dy2, kernel_size = kernel_size, ncores = parallel::detectCores() - 1)
+      Dy_norm <- iterative_blur(image = Dy2, sigma = sigma, kernel_size = kernel_size, ncores = parallel::detectCores() - 1)
 
     } else Dy_norm <- Dy2
 
@@ -148,7 +150,7 @@ compute_deformation_field <- function(source_coords,
 
     if (kernel_size > 0) {
 
-      Dz_norm <- iterative_blur(image = Dz2, kernel_size = kernel_size, ncores = parallel::detectCores() - 1)
+      Dz_norm <- iterative_blur(image = Dz2, sigma = sigma, kernel_size = kernel_size, ncores = parallel::detectCores() - 1)
 
     } else Dz_norm <- Dz2
 

@@ -38,7 +38,7 @@ get_sample_indices <- function(Vy,
 
     sampling_indices <- sample(all_idx, length(all_idx))
 
-    if (class_balance & (length(unique_labels) > 1)) {
+    if (((is.logical(class_balance) && class_balance) || (!is.null(class_balance))) & (length(unique_labels) > 1)) {
 
       # Vy <- map_ids(image = Vy, remap_classes = config$remap_classes)
       # unique_labels <- unique(c(0, config$remap_classes$target, config$remap_classes$remaining))

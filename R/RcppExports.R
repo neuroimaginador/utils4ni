@@ -121,6 +121,22 @@ image_fusion_omp <- function(labels4D, actual_voxels, voxel_lookup_table, kANN, 
     invisible(.Call('_utils4ni_image_fusion_omp', PACKAGE = 'utils4ni', labels4D, actual_voxels, voxel_lookup_table, kANN, patch_neighbours, lambda, sigma2, match, new_voting, voxel_candidate, ncores))
 }
 
+get_windows_at <- function(V, width, x, y, z) {
+    .Call('_utils4ni_get_windows_at', PACKAGE = 'utils4ni', V, width, x, y, z)
+}
+
+results_to_volume <- function(V, width, res, counts, x, y, z) {
+    invisible(.Call('_utils4ni_results_to_volume', PACKAGE = 'utils4ni', V, width, res, counts, x, y, z))
+}
+
+results_to_volume_label <- function(V, width, res, x, y, z) {
+    invisible(.Call('_utils4ni_results_to_volume_label', PACKAGE = 'utils4ni', V, width, res, x, y, z))
+}
+
+results_to_volume_label_with_distance <- function(V, width, res, last_distance, x, y, z) {
+    invisible(.Call('_utils4ni_results_to_volume_label_with_distance', PACKAGE = 'utils4ni', V, width, res, last_distance, x, y, z))
+}
+
 regularize <- function(image, kernel, ncores = 1L) {
     .Call('_utils4ni_regularize', PACKAGE = 'utils4ni', image, kernel, ncores)
 }
@@ -151,6 +167,14 @@ mean_by_ROI <- function(labelled, values) {
 
 segmentation <- function(image, otsu_estimates) {
     .Call('_utils4ni_segmentation', PACKAGE = 'utils4ni', image, otsu_estimates)
+}
+
+which_max <- function(image) {
+    .Call('_utils4ni_which_max', PACKAGE = 'utils4ni', image)
+}
+
+to_categorical_volume_cpp <- function(image, unique_labels) {
+    .Call('_utils4ni_to_categorical_volume_cpp', PACKAGE = 'utils4ni', image, unique_labels)
 }
 
 transform_volume <- function(V, M, target_dims, method) {

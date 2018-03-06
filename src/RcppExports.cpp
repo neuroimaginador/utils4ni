@@ -463,6 +463,68 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// get_windows_at
+NumericVector get_windows_at(NumericVector V, int width, IntegerVector x, IntegerVector y, IntegerVector z);
+RcppExport SEXP _utils4ni_get_windows_at(SEXP VSEXP, SEXP widthSEXP, SEXP xSEXP, SEXP ySEXP, SEXP zSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type V(VSEXP);
+    Rcpp::traits::input_parameter< int >::type width(widthSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type z(zSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_windows_at(V, width, x, y, z));
+    return rcpp_result_gen;
+END_RCPP
+}
+// results_to_volume
+void results_to_volume(NumericVector V, int width, NumericVector res, NumericVector counts, IntegerVector x, IntegerVector y, IntegerVector z);
+RcppExport SEXP _utils4ni_results_to_volume(SEXP VSEXP, SEXP widthSEXP, SEXP resSEXP, SEXP countsSEXP, SEXP xSEXP, SEXP ySEXP, SEXP zSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type V(VSEXP);
+    Rcpp::traits::input_parameter< int >::type width(widthSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type res(resSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type counts(countsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type z(zSEXP);
+    results_to_volume(V, width, res, counts, x, y, z);
+    return R_NilValue;
+END_RCPP
+}
+// results_to_volume_label
+void results_to_volume_label(NumericVector V, int width, NumericVector res, IntegerVector x, IntegerVector y, IntegerVector z);
+RcppExport SEXP _utils4ni_results_to_volume_label(SEXP VSEXP, SEXP widthSEXP, SEXP resSEXP, SEXP xSEXP, SEXP ySEXP, SEXP zSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type V(VSEXP);
+    Rcpp::traits::input_parameter< int >::type width(widthSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type res(resSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type z(zSEXP);
+    results_to_volume_label(V, width, res, x, y, z);
+    return R_NilValue;
+END_RCPP
+}
+// results_to_volume_label_with_distance
+void results_to_volume_label_with_distance(NumericVector V, int width, NumericVector res, NumericVector last_distance, IntegerVector x, IntegerVector y, IntegerVector z);
+RcppExport SEXP _utils4ni_results_to_volume_label_with_distance(SEXP VSEXP, SEXP widthSEXP, SEXP resSEXP, SEXP last_distanceSEXP, SEXP xSEXP, SEXP ySEXP, SEXP zSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type V(VSEXP);
+    Rcpp::traits::input_parameter< int >::type width(widthSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type res(resSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type last_distance(last_distanceSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type z(zSEXP);
+    results_to_volume_label_with_distance(V, width, res, last_distance, x, y, z);
+    return R_NilValue;
+END_RCPP
+}
 // regularize
 NumericVector regularize(NumericVector image, NumericVector kernel, int ncores);
 RcppExport SEXP _utils4ni_regularize(SEXP imageSEXP, SEXP kernelSEXP, SEXP ncoresSEXP) {
@@ -558,6 +620,29 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// which_max
+NumericVector which_max(NumericVector image);
+RcppExport SEXP _utils4ni_which_max(SEXP imageSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type image(imageSEXP);
+    rcpp_result_gen = Rcpp::wrap(which_max(image));
+    return rcpp_result_gen;
+END_RCPP
+}
+// to_categorical_volume_cpp
+IntegerVector to_categorical_volume_cpp(NumericVector image, IntegerVector unique_labels);
+RcppExport SEXP _utils4ni_to_categorical_volume_cpp(SEXP imageSEXP, SEXP unique_labelsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type image(imageSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type unique_labels(unique_labelsSEXP);
+    rcpp_result_gen = Rcpp::wrap(to_categorical_volume_cpp(image, unique_labels));
+    return rcpp_result_gen;
+END_RCPP
+}
 // transform_volume
 NumericVector transform_volume(NumericVector V, NumericVector M, IntegerVector target_dims, int method);
 RcppExport SEXP _utils4ni_transform_volume(SEXP VSEXP, SEXP MSEXP, SEXP target_dimsSEXP, SEXP methodSEXP) {
@@ -649,6 +734,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_utils4ni_constrained_random_search_omp", (DL_FUNC) &_utils4ni_constrained_random_search_omp, 12},
     {"_utils4ni_label_fusion2_omp", (DL_FUNC) &_utils4ni_label_fusion2_omp, 11},
     {"_utils4ni_image_fusion_omp", (DL_FUNC) &_utils4ni_image_fusion_omp, 11},
+    {"_utils4ni_get_windows_at", (DL_FUNC) &_utils4ni_get_windows_at, 5},
+    {"_utils4ni_results_to_volume", (DL_FUNC) &_utils4ni_results_to_volume, 7},
+    {"_utils4ni_results_to_volume_label", (DL_FUNC) &_utils4ni_results_to_volume_label, 6},
+    {"_utils4ni_results_to_volume_label_with_distance", (DL_FUNC) &_utils4ni_results_to_volume_label_with_distance, 7},
     {"_utils4ni_regularize", (DL_FUNC) &_utils4ni_regularize, 3},
     {"_utils4ni_sum_4d", (DL_FUNC) &_utils4ni_sum_4d, 1},
     {"_utils4ni_sum_by_ROI", (DL_FUNC) &_utils4ni_sum_by_ROI, 2},
@@ -657,6 +746,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_utils4ni_count_by_ROI", (DL_FUNC) &_utils4ni_count_by_ROI, 1},
     {"_utils4ni_mean_by_ROI", (DL_FUNC) &_utils4ni_mean_by_ROI, 2},
     {"_utils4ni_segmentation", (DL_FUNC) &_utils4ni_segmentation, 2},
+    {"_utils4ni_which_max", (DL_FUNC) &_utils4ni_which_max, 1},
+    {"_utils4ni_to_categorical_volume_cpp", (DL_FUNC) &_utils4ni_to_categorical_volume_cpp, 2},
     {"_utils4ni_transform_volume", (DL_FUNC) &_utils4ni_transform_volume, 4},
     {"_utils4ni_deform_volume", (DL_FUNC) &_utils4ni_deform_volume, 6},
     {"_utils4ni_deform_volume_candidates", (DL_FUNC) &_utils4ni_deform_volume_candidates, 6},

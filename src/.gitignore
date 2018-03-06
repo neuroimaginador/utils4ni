@@ -22,3 +22,5 @@ confusion_matrix.o
 nifti_utils.o
 opal_omp_memory.o
 transform_volume.o
+read_windows.o
+to_categorical.o

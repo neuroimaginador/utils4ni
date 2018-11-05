@@ -110,32 +110,53 @@ void results_to_volume(NumericVector V,
   IntegerVector dims = V.attr("dim");
   IntegerVector target_dims = res.attr("dim");
 
+  Rprintf("Vdims0 = %u, Vdims1 = %u\n", dims[0], dims[1]);
+  Rprintf("Rdims0 = %u, Rdims1 = %u\n", target_dims[0], target_dims[1]);
+
+  int n_volumes = 1;
+
+  if (target_dims.size() >= 4) {
+
+    n_volumes = target_dims[3];
+
+  }
+
+  Rprintf("n_volumes = %u\n", n_volumes);
+
   for (int i = 0; i < x.size(); i++) {
 
     int inner_count = 0;
 
-    for (int dz = -radius + 1; dz < radius - disp; dz++) {
+    for (int volume = 0; volume < n_volumes; volume++) {
 
-      for (int dy = -radius + 1; dy < radius - disp; dy++) {
+      for (int dz = -radius + 1; dz < radius - disp; dz++) {
 
-        for (int dx = -radius + 1; dx < radius - disp; dx++) {
+        for (int dy = -radius + 1; dy < radius - disp; dy++) {
 
-          if ((x[i] + dx >= 0) & (x[i] + dx < target_dims[0]) & (y[i] + dy >= 0) & (y[i] + dy < target_dims[1]) & (z[i] + dz >= 0) & (z[i] + dz < target_dims[2])) {
+          for (int dx = -radius + 1; dx < radius - disp; dx++) {
 
-            int offset = (x[i] + dx) + target_dims[0] * (y[i] + dy) + target_dims[0] * target_dims[1] * (z[i] + dz);
+            if ((x[i] + dx >= 0) & (x[i] + dx < target_dims[0]) & (y[i] + dy >= 0) & (y[i] + dy < target_dims[1]) & (z[i] + dz >= 0) & (z[i] + dz < target_dims[2])) {
 
-            res[offset] += V[i + dims[0] * inner_count];
-            counts[offset] += 1;
+              int offset = (x[i] + dx) + target_dims[0] * (y[i] + dy) + target_dims[0] * target_dims[1] * (z[i] + dz);
+              offset += volume * dims[0] * dims[1] * dims[2];
+
+              // res[offset] += V[i + dims[0] * inner_count];
+              // counts[offset] += 1;
+
+            }
+
+            inner_count++;
 
           }
-
-          inner_count++;
 
         }
 
       }
 
     }
+
+    Rprintf("inner_count = %u\n", --inner_count);
+    Rprintf("i + dims[0] * inner_count = %u\n", i + dims[0] * inner_count);
 
   }
 

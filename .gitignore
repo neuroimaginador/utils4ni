@@ -2,3 +2,5 @@
 .Rhistory
 .RData
 model.png
+.DS_Store
+.Rbuildignore

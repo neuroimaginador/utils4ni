@@ -117,6 +117,14 @@ label_fusion2_omp <- function(labels4D, actual_voxels, voxel_lookup_table, label
     invisible(.Call('_utils4ni_label_fusion2_omp', PACKAGE = 'utils4ni', labels4D, actual_voxels, voxel_lookup_table, label_ids, kANN, patch_neighbours, lambda, sigma2, match, new_voting, ncores))
 }
 
+label_fusion_omp_fast <- function(labels4D, actual_voxels, voxel_lookup_table, label_ids, kANN, patch_neighbours, lambda, sigma2, match, new_voting, new_sim, ncores = 2L) {
+    invisible(.Call('_utils4ni_label_fusion_omp_fast', PACKAGE = 'utils4ni', labels4D, actual_voxels, voxel_lookup_table, label_ids, kANN, patch_neighbours, lambda, sigma2, match, new_voting, new_sim, ncores))
+}
+
+label_fusion_mode <- function(my_labels, result, my_similarities, ncores = 1L) {
+    invisible(.Call('_utils4ni_label_fusion_mode', PACKAGE = 'utils4ni', my_labels, result, my_similarities, ncores))
+}
+
 image_fusion_omp <- function(labels4D, actual_voxels, voxel_lookup_table, kANN, patch_neighbours, lambda, sigma2, match, new_voting, voxel_candidate, ncores = 2L) {
     invisible(.Call('_utils4ni_image_fusion_omp', PACKAGE = 'utils4ni', labels4D, actual_voxels, voxel_lookup_table, kANN, patch_neighbours, lambda, sigma2, match, new_voting, voxel_candidate, ncores))
 }

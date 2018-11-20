@@ -12,10 +12,12 @@ malf <- function(input_image,
                  kernel_sigma = 1,
                  kernel_width = 3,
                  sigma2 = 0,
+                 method = c("mi", "ssd"),
                  return_memberships = FALSE,
                  ncores = parallel::detectCores() - 1) {
 
   cat("Running MALF in", ncores, "cores\n")
+  cat("Using", method[1], "as similarity.\n")
 
   elapsed <- system.time(
     L <- obtain_candidates_similarities(image = input_image,
@@ -25,6 +27,7 @@ malf <- function(input_image,
                                         search_size = search_size,
                                         stride = stride,
                                         max_iter = max_iter,
+                                        method = method,
                                         max_random_neighbours = max_random_neighbours,
                                         ncores = ncores)
   )
@@ -32,6 +35,7 @@ malf <- function(input_image,
   cat("Elapsed in obtaining candidates: ", elapsed[3], "\n")
 
   label_ids <- label_ids %>% as.integer()
+
   new_voting <- array(0, dim = c(dim(input_image), length(label_ids)))
 
   elapsed <- system.time(
@@ -74,6 +78,106 @@ malf <- function(input_image,
   }
 
 }
+
+fast_malf <- function(input_image,
+                      mask = NULL,
+                      template4D,
+                      labels4D,
+                      patch_size = 9,
+                      search_size = 5,
+                      stride = round((patch_size + 1) / 2),
+                      max_iter = 10,
+                      max_random_neighbours = 2,
+                      label_ids = c(0, 1),
+                      lambda = 0.7,
+                      kernel_sigma = 1,
+                      kernel_width = 3,
+                      sigma2 = 0,
+                      method = c("mi", "ssd"),
+                      ncores = parallel::detectCores() - 1) {
+
+  cat("Running MALF in", ncores, "cores\n")
+  cat("Using", method[1], "as similarity.\n")
+
+  elapsed <- system.time(
+    L <- obtain_candidates_similarities(image = input_image,
+                                        mask = mask,
+                                        templates = template4D,
+                                        patch_size = patch_size,
+                                        search_size = search_size,
+                                        stride = stride,
+                                        max_iter = max_iter,
+                                        method = method,
+                                        max_random_neighbours = max_random_neighbours,
+                                        ncores = ncores)
+  )
+
+  cat("Elapsed in obtaining candidates: ", elapsed[3], "\n")
+
+  label_ids <- label_ids %>% as.integer()
+
+  cat("Fast Mode\n")
+
+  new_sim <- array(0, dim = dim(labels4D))
+  dim(new_sim) <- dim(labels4D)
+
+  new_voting <- new_sim %>% as.integer()
+  dim(new_voting) <- dim(labels4D)
+
+  elapsed <- system.time( {
+    label_fusion_omp_fast(labels4D = labels4D,
+                          actual_voxels = L$actual_voxels %>% as.integer(),
+                          voxel_lookup_table = L$voxel_lookup_table %>% as.integer(),
+                          label_ids = label_ids,
+                          kANN = L$candidates %>% as.integer(),
+                          patch_neighbours = L$patch_neighbours %>% as.integer(),
+                          lambda = lambda,
+                          sigma2 = sigma2,
+                          match = L$similarities,
+                          new_voting = new_voting,
+                          new_sim = new_sim,
+                          ncores = ncores)
+
+    cat("Label Fusion\n")
+
+    gc()
+
+    if (kernel_width > 0) {
+
+      cat("Regularization\n")
+
+      kernel_width <- 2 * floor(kernel_width / 2) + 1
+
+      kernel <- gaussian_kernel(sigma = kernel_sigma,
+                                dim = 3,
+                                size = kernel_width,
+                                normalised = TRUE)
+
+      new_sim <- regularize(image = new_sim,
+                            kernel = kernel,
+                            ncores = ncores)
+
+    }
+
+    result <- array(0, dim = dim(input_image)) %>% as.integer()
+
+    label_fusion_mode(my_labels = new_voting,
+                      my_similarities = new_sim,
+                      result = result,
+                      ncores = ncores)
+
+    dim(result) <- dim(input_image)
+
+    cat("Mode\n")
+
+  })
+
+  cat("Elapsed in label fusion: ", elapsed[3], "\n")
+
+  return(result)
+
+}
+
 
 
 obtain_candidates_similarities <- function(image,

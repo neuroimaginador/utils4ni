@@ -160,7 +160,7 @@ void constrained_initialization_omp(NumericVector input_image,
   if (search_size % 2 == 0) search_size++;
 
   // Added an omp pragma directive to parallelize the loop with ncores
-// #pragma omp parallel for num_threads(ncores)
+  // #pragma omp parallel for num_threads(ncores)
   for (int x = 0; x < dims[0]; x++) {
 
     for (int y = 0; y < dims[1]; y++) {
@@ -317,7 +317,7 @@ void propagation_step_omp(NumericVector input_image,
   neighbour_offset[2] = neighbour_offset[1] * dims[1];
 
   // Added an omp pragma directive to parallelize the loop with ncores
-#pragma omp parallel for num_threads(ncores) private(input_patch, input_values, temp_neighs, temp_values) schedule(dynamic, 10000)
+#pragma omp parallel for num_threads(ncores) private(input_patch, input_values, temp_neighs, temp_values) schedule(guided)
   for (int voxel = 0; voxel < n_voxels_image; voxel++) {
 
     int idx = voxel_lookup_table[voxel];
@@ -441,7 +441,7 @@ void constrained_random_search_omp(NumericVector input_image,
     // Rprintf("search_size = %u\n", search_size);
 
     // Added an omp pragma directive to parallelize the loop with ncores
-#pragma omp parallel for num_threads(ncores) private(input_patch, input_values, temp_neighs, temp_values) schedule(dynamic, 10000)
+#pragma omp parallel for num_threads(ncores) private(input_patch, input_values, temp_neighs, temp_values) schedule(guided)
     for (int voxel = 0; voxel < n_voxels_image; voxel++) {
 
       int idx_voxel = voxel_lookup_table[voxel];
@@ -769,7 +769,7 @@ void label_fusion2_omp(IntegerVector labels4D,
 
   }
 
-#pragma omp parallel for num_threads(ncores)
+#pragma omp parallel for num_threads(ncores) schedule(guided)
   for (int idx = 0; idx < actual_voxels; idx++) {
 
     double min_simil = 1.e10;
@@ -803,7 +803,7 @@ void label_fusion2_omp(IntegerVector labels4D,
   }
 
 
-#pragma omp parallel for num_threads(ncores) private(counts) schedule(dynamic, 10000)
+#pragma omp parallel for num_threads(ncores) private(counts) schedule(guided)
   for (int voxel = 0; voxel < n_voxels_image; voxel++) {
 
     counts = 0;
@@ -879,6 +879,201 @@ void label_fusion2_omp(IntegerVector labels4D,
 
 }
 
+
+// [[Rcpp::export]]
+void label_fusion_omp_fast(IntegerVector labels4D,
+                           int actual_voxels,
+                           IntegerVector voxel_lookup_table,
+                           IntegerVector label_ids,
+                           IntegerVector kANN,
+                           IntegerVector patch_neighbours,
+                           double lambda,
+                           double sigma2,
+                           NumericVector match,
+                           IntegerVector new_voting,
+                           NumericVector new_sim,
+                           int ncores = 2) {
+
+  int n_neighbours_patch = patch_neighbours.size();
+  int n_voxels_image = voxel_lookup_table.size();
+  IntegerVector dims = labels4D.attr("dim");
+  int n_labels = label_ids.size();
+
+  int n_templates = dims[3];
+
+  int counts;
+  int max_label = max(labels4D);
+
+  int* new_labels = (int*) malloc((max_label + 1) * sizeof(int));
+
+  for (int lb = 0; lb <= max_label; lb++) {
+
+    new_labels[lb] = -1;
+
+  }
+
+  for (int lb = 0; lb < n_labels; lb++) {
+
+    new_labels[label_ids[lb]] = lb;
+
+  }
+
+#pragma omp parallel for num_threads(ncores) schedule(guided)
+  for (int idx = 0; idx < actual_voxels; idx++) {
+
+    double min_simil = 1.e10;
+    for (int k1 = 0; k1 < n_templates; k1++) {
+
+      if (min_simil > match[k1 * actual_voxels + idx])
+        min_simil = match[k1 * actual_voxels + idx];
+
+    }
+
+    double h2 = min_simil * lambda + 1.e-15;
+    for (int k1 = 0; k1 < n_templates; k1++) {
+
+      match[k1 * actual_voxels + idx] = exp( match[k1 * actual_voxels + idx] / h2 );
+
+    }
+
+    double cumulative = 0;
+    for (int k1 = 0; k1 < n_templates; k1++) {
+
+      cumulative += match[k1 * actual_voxels + idx];
+
+    }
+
+    for (int k1 = 0; k1 < n_templates; k1++) {
+
+      match[k1 * actual_voxels + idx] /= cumulative;
+
+    }
+
+  }
+
+#pragma omp parallel for num_threads(ncores) private(counts) schedule(guided)
+  for (int voxel = 0; voxel < n_voxels_image; voxel++) {
+
+    counts = 0;
+
+    // Loop over all neighbours
+    for (int neighbour = 0; neighbour < n_neighbours_patch; neighbour++) {
+
+      int my_neighbour = voxel + patch_neighbours[neighbour];
+
+      if ((my_neighbour < 0) || (my_neighbour >= n_voxels_image)) continue;
+
+      // If idx_patch_center >= 0 is because it is the center of a patch
+      int idx_patch_center = voxel_lookup_table[my_neighbour];
+
+      if (idx_patch_center >= 0) {
+
+        int relative_difference = voxel - my_neighbour;
+
+        for (int k1 = 0; k1 < n_templates; k1++) {
+
+          int candidate =  k1 * n_voxels_image + kANN[k1 * actual_voxels + idx_patch_center];
+          int voxel_candidate = candidate + relative_difference;
+
+          if (voxel_candidate < k1 * n_voxels_image) {
+
+            voxel_candidate = k1 * n_voxels_image;
+
+          }
+
+          if (voxel_candidate >= (k1 + 1) * n_voxels_image) {
+
+            voxel_candidate = (k1 + 1) * n_voxels_image - 1;
+          }
+
+          int lb = new_labels[labels4D[voxel_candidate]];
+
+          if (lb >= 0)
+            if (new_sim[k1 * n_voxels_image + voxel] < match[k1 * actual_voxels + idx_patch_center]) {
+
+              new_voting[k1 * n_voxels_image + voxel] = lb;
+              new_sim[k1 * n_voxels_image + voxel] = match[k1 * actual_voxels + idx_patch_center];
+
+            }
+
+        }
+
+      } // Patch
+
+    } // All neighbours
+
+  } // All voxels
+
+  free(new_labels);
+
+}
+
+// [[Rcpp::export]]
+void label_fusion_mode(IntegerVector my_labels,
+                       IntegerVector result,
+                       NumericVector my_similarities,
+                       int ncores = 1) {
+
+  int n_voxels_image = result.size();
+
+  Rprintf("n_voxels_image = %u\n", n_voxels_image);
+
+  IntegerVector dims = my_labels.attr("dim");
+
+  int n_templates = dims[3];
+
+  int max_label = max(my_labels);
+
+  double* new_labels = (double*) malloc((max_label + 1) * sizeof(double));
+
+  for (int voxel = 0; voxel < n_voxels_image; voxel++) {
+
+    // Rprintf("voxel = %u\n", voxel);
+
+    for (int i = 0; i < max_label + 1; i++) {
+
+      new_labels[i] = 0;
+
+    }
+
+    // Rprintf("  Initialized\n");
+
+    for (int k = 0; k < n_templates; k++) {
+
+      int lb = my_labels[k * n_voxels_image + voxel];
+
+      new_labels[lb] += my_similarities[k * n_voxels_image + voxel];
+
+    }
+
+    // Rprintf("  Tabulated\n");
+
+    double M = -1;
+    int M_label;
+    for (int i = 0; i < max_label + 1; i++) {
+
+      if (M < new_labels[i]) {
+
+        M = new_labels[i];
+        M_label = i;
+
+      }
+
+    }
+
+    // Rprintf("  Max\n");
+
+    result[voxel] = M_label;
+
+    // Rprintf("  Assigned\n");
+
+  }
+
+  // Rprintf("Out\n");
+
+  free(new_labels);
+
+}
 
 // [[Rcpp::export]]
 void image_fusion_omp(NumericVector labels4D,

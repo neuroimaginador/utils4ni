@@ -33,6 +33,10 @@ defuzzify <- function(image, ncores = 1L) {
     .Call('_utils4ni_defuzzify', PACKAGE = 'utils4ni', image, ncores)
 }
 
+defuzzify_list <- function(images, ncores = 1L) {
+    .Call('_utils4ni_defuzzify_list', PACKAGE = 'utils4ni', images, ncores)
+}
+
 extend_labels <- function(pIn, maskImage) {
     .Call('_utils4ni_extend_labels', PACKAGE = 'utils4ni', pIn, maskImage)
 }

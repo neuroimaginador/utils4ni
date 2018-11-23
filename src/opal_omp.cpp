@@ -1016,7 +1016,7 @@ void label_fusion_mode(IntegerVector my_labels,
 
   int n_voxels_image = result.size();
 
-  Rprintf("n_voxels_image = %u\n", n_voxels_image);
+  // Rprintf("n_voxels_image = %u\n", n_voxels_image);
 
   IntegerVector dims = my_labels.attr("dim");
 

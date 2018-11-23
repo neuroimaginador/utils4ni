@@ -95,4 +95,59 @@ IntegerVector defuzzify(NumericVector image, int ncores = 1) {
 
 }
 
+void defuzzify_list(List images, IntegerVector result, int ncores) {
 
+  int n_classes = images.size();
+
+  NumericVector best_probability(clone<NumericVector>(images[1]));
+
+  int n_voxels = best_probability.size();
+
+  // Loop over all possible classes
+  for (int i = 1; i < n_classes; i++) {
+
+    NumericVector I(images[i]);
+
+    // Loop over voxels
+#pragma omp parallel for num_threads(ncores)
+    for (int voxel = 0; voxel < n_voxels; voxel++) {
+
+      if (I[voxel] > best_probability[voxel]) {
+
+        result[voxel] = i;
+        best_probability[voxel] = I[voxel];
+
+      }
+
+    }
+
+  }
+
+}
+
+// [[Rcpp::export]]
+IntegerVector defuzzify_list(List images, int ncores = 1) {
+
+  NumericVector im1 = images[1];
+
+  IntegerVector dims = im1.attr("dim");
+
+  int nvoxels = 1;
+
+  for (int i = 0; i < dims.size(); i++) {
+
+    nvoxels *= dims[i];
+
+  }
+
+  IntegerVector segmentation(nvoxels);
+
+  defuzzify_list(images, segmentation, ncores);
+
+  // defuzzify(image.begin(), nvoxels, nclasses, segmentation.begin());
+
+  segmentation.attr("dim") = dims;
+
+  return segmentation;
+
+}

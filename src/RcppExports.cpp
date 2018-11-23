@@ -106,6 +106,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// defuzzify_list
+IntegerVector defuzzify_list(List images, int ncores);
+RcppExport SEXP _utils4ni_defuzzify_list(SEXP imagesSEXP, SEXP ncoresSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type images(imagesSEXP);
+    Rcpp::traits::input_parameter< int >::type ncores(ncoresSEXP);
+    rcpp_result_gen = Rcpp::wrap(defuzzify_list(images, ncores));
+    return rcpp_result_gen;
+END_RCPP
+}
 // extend_labels
 IntegerVector extend_labels(IntegerVector pIn, IntegerVector maskImage);
 RcppExport SEXP _utils4ni_extend_labels(SEXP pInSEXP, SEXP maskImageSEXP) {
@@ -746,6 +758,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_utils4ni_cTruncado", (DL_FUNC) &_utils4ni_cTruncado, 2},
     {"_utils4ni_cvolfilter2d", (DL_FUNC) &_utils4ni_cvolfilter2d, 3},
     {"_utils4ni_defuzzify", (DL_FUNC) &_utils4ni_defuzzify, 2},
+    {"_utils4ni_defuzzify_list", (DL_FUNC) &_utils4ni_defuzzify_list, 2},
     {"_utils4ni_extend_labels", (DL_FUNC) &_utils4ni_extend_labels, 2},
     {"_utils4ni_map_ids_workhorse", (DL_FUNC) &_utils4ni_map_ids_workhorse, 3},
     {"_utils4ni_map_extra_classes", (DL_FUNC) &_utils4ni_map_extra_classes, 3},

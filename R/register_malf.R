@@ -1,4 +1,4 @@
-register_malf <- function(image, template_files, label_files) {
+register_malf <- function(image, template_files, label_files, typeofTransform = "AffineFast", ...) {
 
   num_subjects <- length(template_files)
 
@@ -24,7 +24,8 @@ register_malf <- function(image, template_files, label_files) {
       tx <- ANTsRCore::antsRegistration(fixed = img,
                              moving = ANTsRCore::antsImageRead(template_files[i]),
                              verbose = FALSE,
-                             typeofTransform = "AffineFast")
+                             typeofTransform = typeofTransform,
+                             ...)
 
       templates[, , , i] <- tx$warpedmovout %>% as.array()
 

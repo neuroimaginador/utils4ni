@@ -13,6 +13,7 @@ malf <- function(input_image,
                  kernel_width = 3,
                  sigma2 = 0,
                  method = c("mi", "ssd"),
+                 early_stopping = list(),
                  return_memberships = FALSE,
                  ncores = parallel::detectCores() - 1) {
 
@@ -29,6 +30,7 @@ malf <- function(input_image,
                                         max_iter = max_iter,
                                         method = method,
                                         max_random_neighbours = max_random_neighbours,
+                                        early_stopping = early_stopping,
                                         ncores = ncores)
   )
 

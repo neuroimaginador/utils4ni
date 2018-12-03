@@ -99,7 +99,7 @@ void defuzzify_list(List images, IntegerVector result, int ncores) {
 
   int n_classes = images.size();
 
-  NumericVector best_probability(clone<NumericVector>(images[1]));
+  NumericVector best_probability(clone<NumericVector>(images[0]));
 
   int n_voxels = best_probability.size();
 

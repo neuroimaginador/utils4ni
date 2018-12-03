@@ -9,6 +9,10 @@ cCreateMask <- function(ima, dims, c, medias) {
     .Call('_utils4ni_cCreateMask', PACKAGE = 'utils4ni', ima, dims, c, medias)
 }
 
+cTruncado <- function(ima, dims) {
+    .Call('_utils4ni_cTruncado', PACKAGE = 'utils4ni', ima, dims)
+}
+
 cgradientmodule <- function(ima, dims) {
     .Call('_utils4ni_cgradientmodule', PACKAGE = 'utils4ni', ima, dims)
 }
@@ -19,10 +23,6 @@ confusion_matrix <- function(label1, label2) {
 
 connected_components <- function(image) {
     .Call('_utils4ni_connected_components', PACKAGE = 'utils4ni', image)
-}
-
-cTruncado <- function(ima, dims) {
-    .Call('_utils4ni_cTruncado', PACKAGE = 'utils4ni', ima, dims)
 }
 
 cvolfilter2d <- function(ima, dims, v) {

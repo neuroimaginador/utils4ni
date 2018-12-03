@@ -55,25 +55,39 @@ malf <- function(input_image,
   )
   cat("Elapsed in label fusion: ", elapsed[3], "\n")
 
+  tmp <- list()
+  for (i in seq_along(label_ids)) {
+
+    tmp[[i]] <- new_voting[, , , i]
+
+  }
 
   if (kernel_width > 0) {
 
-    kernel_width <- 2 * floor(kernel_width / 2) + 1
-    kernel <- gaussian_kernel(sigma = kernel_sigma, size = kernel_width)
+    elapsed <- system.time({
 
-    elapsed <- system.time(new_voting <- regularize(new_voting, kernel, ncores = ncores))
+      for (i in seq_along(label_ids)) {
+
+        tmp[[i]] <- tmp[[i]] %>%
+          ANTsRCore::as.antsImage() %>%
+          ANTsRCore::smoothImage(sigma = kernel_sigma, FWHM = TRUE) %>%
+          as.array()
+
+      }
+
+    })
+
     cat("Elapsed in smoothing: ", elapsed[3], "\n")
-
 
   }
 
   if (return_memberships) {
 
-    return(new_voting)
+    return(tmp)
 
   } else {
 
-    seg <- defuzzify(new_voting) - 1
+    seg <- defuzzify_list(tmp)
 
     return(seg)
 
@@ -96,7 +110,7 @@ fast_malf <- function(input_image,
                       kernel_width = 3,
                       sigma2 = 0,
                       method = c("mi", "ssd"),
-                      ncores = parallel::detectCores() - 1) {
+                      ncores = parallel::detectCores()) {
 
   cat("Running MALF in", ncores, "cores\n")
   cat("Using", method[1], "as similarity.\n")
@@ -150,14 +164,19 @@ fast_malf <- function(input_image,
 
       kernel_width <- 2 * floor(kernel_width / 2) + 1
 
-      kernel <- gaussian_kernel(sigma = kernel_sigma,
-                                dim = 3,
-                                size = kernel_width,
-                                normalised = TRUE)
+      new_sim <- ANTsRCore::smoothImage(inimg = ANTsRCore::as.antsImage(new_sim),
+                                        sigma = kernel_sigma,
+                                        max_kernel_width = kernel_width) %>%
+        as.array()
 
-      new_sim <- regularize(image = new_sim,
-                            kernel = kernel,
-                            ncores = ncores)
+      # kernel <- gaussian_kernel(sigma = kernel_sigma,
+      #                           dim = 3,
+      #                           size = kernel_width,
+      #                           normalised = TRUE)
+      #
+      # new_sim <- regularize(image = new_sim,
+      #                       kernel = kernel,
+      #                       ncores = ncores)
 
     }
 

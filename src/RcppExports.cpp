@@ -34,6 +34,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cTruncado
+NumericVector cTruncado(NumericVector ima, IntegerVector dims);
+RcppExport SEXP _utils4ni_cTruncado(SEXP imaSEXP, SEXP dimsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type ima(imaSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
+    rcpp_result_gen = Rcpp::wrap(cTruncado(ima, dims));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cgradientmodule
 NumericVector cgradientmodule(NumericVector ima, IntegerVector dims);
 RcppExport SEXP _utils4ni_cgradientmodule(SEXP imaSEXP, SEXP dimsSEXP) {
@@ -66,18 +78,6 @@ BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< IntegerVector >::type image(imageSEXP);
     rcpp_result_gen = Rcpp::wrap(connected_components(image));
-    return rcpp_result_gen;
-END_RCPP
-}
-// cTruncado
-NumericVector cTruncado(NumericVector ima, IntegerVector dims);
-RcppExport SEXP _utils4ni_cTruncado(SEXP imaSEXP, SEXP dimsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type ima(imaSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
-    rcpp_result_gen = Rcpp::wrap(cTruncado(ima, dims));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -752,10 +752,10 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_utils4ni_adaptive_nonlocal_means_denoising", (DL_FUNC) &_utils4ni_adaptive_nonlocal_means_denoising, 5},
     {"_utils4ni_cCreateMask", (DL_FUNC) &_utils4ni_cCreateMask, 4},
+    {"_utils4ni_cTruncado", (DL_FUNC) &_utils4ni_cTruncado, 2},
     {"_utils4ni_cgradientmodule", (DL_FUNC) &_utils4ni_cgradientmodule, 2},
     {"_utils4ni_confusion_matrix", (DL_FUNC) &_utils4ni_confusion_matrix, 2},
     {"_utils4ni_connected_components", (DL_FUNC) &_utils4ni_connected_components, 1},
-    {"_utils4ni_cTruncado", (DL_FUNC) &_utils4ni_cTruncado, 2},
     {"_utils4ni_cvolfilter2d", (DL_FUNC) &_utils4ni_cvolfilter2d, 3},
     {"_utils4ni_defuzzify", (DL_FUNC) &_utils4ni_defuzzify, 2},
     {"_utils4ni_defuzzify_list", (DL_FUNC) &_utils4ni_defuzzify_list, 2},

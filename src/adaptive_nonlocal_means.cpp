@@ -176,7 +176,7 @@ NumericVector adaptive_nonlocal_means_denoising(NumericVector ima, IntegerVector
   varianzas = (double*) malloc(dims[0] * dims[1] * dims[2] * sizeof(double));
 
 
-  for (i = 0; i < dims[2] *dims[1] * dims[0];i++)
+  for (i = 0; i < dims[2] * dims[1] * dims[0]; i++)
   {
     Estimate[i] = 0.0;
     Label[i] = 0.0;
@@ -209,15 +209,16 @@ NumericVector adaptive_nonlocal_means_denoising(NumericVector ima, IntegerVector
               if(nj>=dims[0]) nj=2*dims[0]-nj-1;
               if(nk>=dims[2]) nk=2*dims[2]-nk-1;
 
-
               mean = mean + ima[nk*(dims[0]*dims[1])+(ni*dims[0])+nj];
               indice=indice+1;
 
             }
           }
         }
+
         mean=mean/indice;
         means[k*(dims[0]*dims[1])+(i*dims[0])+j]=mean;
+
       }
     }
   }
@@ -275,8 +276,6 @@ NumericVector adaptive_nonlocal_means_denoising(NumericVector ima, IntegerVector
 
         totalweight=0.0;
 
-
-
         if ((means[k*(dims[0]*dims[1])+(i*dims[0])+j])>epsilon && (varianzas[k*(dims[0]*dims[1])+(i*dims[0])+j]>epsilon))
         {
           wmax=0.0;
@@ -319,13 +318,9 @@ NumericVector adaptive_nonlocal_means_denoising(NumericVector ima, IntegerVector
                     }
                   }
 
-
-
                 }
               }
             }
-
-
 
           }
 

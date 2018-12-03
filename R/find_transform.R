@@ -2,7 +2,7 @@ find_transform <- function(source_image,
                            target_image,
                            max_iter = 50,
                            inner_iter = 10,
-                           max_search = 5,
+                           max_search = 15,
                            window_size = 15,
                            resolution = 12,
                            scheme = 0,
@@ -26,10 +26,10 @@ find_transform <- function(source_image,
                                               stride = stride,
                                               max_iter = max_iter,
                                               max_random_neighbours = 5,
-                                              crs = FALSE,
+                                              crs = TRUE,
                                               early_stopping = list(tol = tol),
                                               scheme = scheme,
-                                              ncores = parallel::detectCores() - 1)
+                                              ncores = parallel::detectCores())
 
   }
 
@@ -50,8 +50,8 @@ find_transform <- function(source_image,
                                          target_coords = target_coords,
                                          target_dims = dim(target_image),
                                          method = method[1],
-                                         sigma = sigma,
-                                         kernel_size = kernel_size)
+                                         sigma = sigma * 2,
+                                         kernel_size = 1)
 
 
   mapped_image <- deform_volume(V = source_image,
@@ -77,6 +77,8 @@ compute_deformation_field <- function(source_coords,
                                       method = c("interpolation", "tps", "mixture"),
                                       sigma = 1,
                                       kernel_size = 0) {
+
+  require(ANTsR)
 
   displ <- target_coords - source_coords
 
@@ -107,9 +109,12 @@ compute_deformation_field <- function(source_coords,
 
   if (method[1] == "interpolation") {
 
+    print("interpolation")
+
     displ_array_x <- array(0, dim = c(length(x_unique) + 1, length(y_unique) + 1, length(z_unique) + 1))
     displ_array_x[seq_along(x_unique), seq_along(y_unique), seq_along(z_unique)] <- displ[, 1]
 
+    print("transforming X")
     Dx1 <- transform_volume(V = displ_array_x,
                             M = SM,
                             target_dims = c(length(xout), length(yout), length(zout)),
@@ -119,9 +124,11 @@ compute_deformation_field <- function(source_coords,
 
     if (kernel_size > 0) {
 
-      Dx_norm <- iterative_blur(image = Dx2, sigma = sigma, kernel_size = kernel_size, ncores = parallel::detectCores() - 1)
+      Dx_norm <- smooth(img = Dx2, sigma = sigma)
 
     } else Dx_norm <- Dx2
+
+    print("transforming Y")
 
     displ_array_y <- array(0, dim = c(length(x_unique) + 1, length(y_unique) + 1, length(z_unique) + 1))
     displ_array_y[seq_along(x_unique), seq_along(y_unique), seq_along(z_unique)] <- displ[, 2]
@@ -135,10 +142,11 @@ compute_deformation_field <- function(source_coords,
 
     if (kernel_size > 0) {
 
-      Dy_norm <- iterative_blur(image = Dy2, sigma = sigma, kernel_size = kernel_size, ncores = parallel::detectCores() - 1)
+      Dy_norm <- smooth(img = Dy2, sigma = sigma)
 
     } else Dy_norm <- Dy2
 
+    print("transforming Z")
     displ_array_z <- array(0, dim = c(length(x_unique) + 1, length(y_unique) + 1, length(z_unique) + 1))
     displ_array_z[seq_along(x_unique), seq_along(y_unique), seq_along(z_unique)] <- displ[, 3]
     Dz1 <- transform_volume(V = displ_array_z,
@@ -150,7 +158,7 @@ compute_deformation_field <- function(source_coords,
 
     if (kernel_size > 0) {
 
-      Dz_norm <- iterative_blur(image = Dz2, sigma = sigma, kernel_size = kernel_size, ncores = parallel::detectCores() - 1)
+      Dz_norm <- smooth(img = Dz2, sigma = sigma)
 
     } else Dz_norm <- Dz2
 
